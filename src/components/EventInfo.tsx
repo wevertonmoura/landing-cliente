@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Calendar, MapPin, Trophy, Clock, Mountain, Droplets, Info, Trash2, ShieldCheck, Waves, Maximize2, Ticket, QrCode, Coffee, Navigation } from 'lucide-react';
 import { motion } from 'framer-motion';
 
