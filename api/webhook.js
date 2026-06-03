@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || 'https://revyeudqlndidaiprabc.supabase.co',
-  process.env.SUPABASE_SERVICE_KEY
-);
+// Usando as suas chaves seguras do .env
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -40,27 +40,28 @@ export default async function handler(req, res) {
 
     if (mpData.status === 'approved') {
       const emailPrincipal = mpData.external_reference;
-      const idDoPagamentoString = paymentId.toString(); // ID que salvamos na nova coluna do banco
+      const idDoPagamentoString = paymentId.toString(); 
       
       console.log(`✅ Pagamento APROVADO para: ${emailPrincipal}`);
 
       if (idDoPagamentoString) {
-        // === MUDANÇA AQUI: Buscamos pelo payment_id em vez do e-mail ===
+        // === Busca pelo payment_id na tabela nova ===
         const { data: inscricoes, error: erroBusca } = await supabase
-          .from('inscricao_trilha')
+          .from('inscricoes')
           .select('*')
           .eq('payment_id', idDoPagamentoString);
 
         if (!erroBusca && inscricoes && inscricoes.length > 0) {
           
-          if (!inscricoes[0].pago) {
+          // === MUDANÇA AQUI: Verificamos se o status ainda é 'pendente' ===
+          if (inscricoes[0].status === 'pendente') {
             
             console.log(`📝 Atualizando ${inscricoes.length} inscritos deste pagamento...`);
 
-            // === MUDANÇA AQUI: Atualizamos apenas quem tem esse payment_id ===
+            // === MUDANÇA AQUI: Atualizamos o status para 'pago' ===
             const { error: erroUpdate } = await supabase
-              .from('inscricao_trilha')
-              .update({ pago: true })
+              .from('inscricoes')
+              .update({ status: 'pago' })
               .eq('payment_id', idDoPagamentoString);
 
             if (erroUpdate) {
@@ -68,34 +69,34 @@ export default async function handler(req, res) {
             } else {
               console.log("🚀 Banco de dados atualizado com SUCESSO!");
               
-              // 3. Disparar E-mail de Confirmação
+              // 3. Disparar E-mail de Confirmação (Atualizado para o tema OS D'SEMPRE)
               const nomesParticipantes = inscricoes.map(p => `<li>🎟️ <strong>${p.nome}</strong></li>`).join('');
 
               const mailOptions = {
-                from: `"Vem Para Trilha" <${process.env.EMAIL_USER}>`, 
+                from: `"OS D'SEMPRE TRILHA" <${process.env.EMAIL_USER}>`, 
                 to: emailPrincipal,
-                subject: '✅ Vaga Garantida: Vem Para Trilha!', 
+                subject: '✅ Vaga Garantida: OS D\'SEMPRE TRILHA!', 
                 html: `
-                  <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
-                    <div style="background-color: #10b981; padding: 20px; text-align: center;">
-                      <h1 style="color: white; margin: 0; font-style: italic;">PAGAMENTO CONFIRMADO!</h1>
+                  <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; border: 1px solid #1e3a8a; border-radius: 10px; overflow: hidden;">
+                    <div style="background-color: #1e3a8a; padding: 20px; text-align: center; border-bottom: 4px solid #facc15;">
+                      <h1 style="color: #facc15; margin: 0; font-style: italic; font-weight: 900;">PAGAMENTO CONFIRMADO!</h1>
                     </div>
                     <div style="padding: 30px; background-color: #fafafa; color: #374151;">
                       <p style="font-size: 16px;">Olá! Seu PIX foi aprovado com sucesso.</p>
-                      <p style="font-size: 16px;">Aqui estão os participantes confirmados nesta compra:</p>
+                      <p style="font-size: 16px;">Aqui estão os atletas confirmados nesta inscrição:</p>
                       <ul style="font-size: 16px; list-style-type: none; padding: 0;">
                         ${nomesParticipantes}
                       </ul>
                       
-                      <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                      <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #1e3a8a;">
                         <h3 style="margin-top: 0; color: #111827;">Resumo do Evento</h3>
-                        <p style="margin: 5px 0;">📅 <strong>Data:</strong> 14/06/2026</p>
-                        <p style="margin: 5px 0;">⏰ <strong>Horário:</strong> 07:00 às 12:00</p>
-                        <p style="margin: 5px 0;">📍 <strong>Local:</strong> Guabiraba, Recife - PE</p>
+                        <p style="margin: 5px 0;">📅 <strong>Data:</strong> 28 de Junho de 2026</p>
+                        <p style="margin: 5px 0;">⏰ <strong>Horários:</strong> Concentração: 05:30 | Largada: 06:30</p>
+                        <p style="margin: 5px 0;">📍 <strong>Local:</strong> Jaboatão dos Guararapes (Suassuna)</p>
                       </div>
 
-                      <p style="margin-top: 25px; font-size: 14px;">Qualquer dúvida, chame no WhatsApp: <a href="https://wa.me/5581988227739" style="color: #10b981; font-weight: bold; text-decoration: none;">(81) 98822-7739</a></p>
-                      <p>Nos vemos na trilha!<br><strong>Equipe Vem Para Trilha</strong></p>
+                      <p style="margin-top: 25px; font-size: 14px;">Qualquer dúvida, entre em contato via WhatsApp com a organização.</p>
+                      <p>Nos vemos na trilha!<br><strong>Equipe OS D'SEMPRE</strong></p>
                     </div>
                   </div>
                 `

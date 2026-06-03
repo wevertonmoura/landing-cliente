@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Pegamos a URL e a Chave das variáveis da Vercel (com um fallback para a sua URL fixa)
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://revyeudqlndidaiprabc.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+// Pegamos a URL e a Chave das variáveis configuradas no seu .env
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   try {
     const { senha } = req.body;
     
-    // O Plano B: Se a Vercel falhar em ler a variável, ele usa a sua senha mestra da Trilha
+    // Puxa a senha administrativa do seu .env (mantendo o seu plano B de contingência)
     const senhaCorreta = process.env.VITE_SENHA_ADMIN || '85113257@we';
 
     if (senha !== senhaCorreta) {
@@ -31,11 +31,11 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Acesso negado' });
     }
 
-    console.log("Acesso liberado. Buscando invasores na tabela inscricao_trilha...");
+    console.log("Acesso liberado. Buscando dados na tabela inscricoes...");
 
-    // Busca os dados
+    // Busca os dados na tabela correta que criamos juntos
     const { data, error } = await supabase
-      .from('inscricao_trilha')
+      .from('inscricoes')
       .select('*')
       .order('created_at', { ascending: false });
 

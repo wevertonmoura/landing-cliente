@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || 'https://revyeudqlndidaiprabc.supabase.co',
-  process.env.SUPABASE_SERVICE_KEY
-);
+// Conectando com as chaves que colocamos no .env
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Método não permitido' });
@@ -13,9 +13,11 @@ export default async function handler(req, res) {
   try {
     const cpfTitular = participantes[0].cpf.replace(/\D/g, '');
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
+    
+    // ATENÇÃO: Certifique-se de que este é o domínio correto onde o site está hospedado
     const webhookUrl = 'https://vemparatrilha.vercel.app/api/webhook';
 
-    // === 1. PRIMEIRO: GERAMOS O PIX PARA TER O ID DO PAGAMENTO ===
+    // === 1. PRIMEIRO: GERAMOS O PIX NO MERCADO PAGO ===
     const payerName = participantes[0].name.trim().split(" ");
     const firstName = payerName[0];
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
@@ -29,7 +31,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         transaction_amount: Number(valorTotal),
-        description: `Inscrição Trilha - ${participantes[0].name}`,
+        description: `Inscrição OS D'SEMPRE - ${participantes[0].name}`, // Nome atualizado
         payment_method_id: 'pix',
         payer: {
           email: emailPrincipal,
@@ -44,29 +46,31 @@ export default async function handler(req, res) {
 
     const mpData = await response.json();
 
-    // Se der erro na geração do PIX, paramos aqui e avisamos o usuário
     if (!mpData.id) {
       return res.status(400).json({ error: 'Erro na API do Mercado Pago', details: mpData });
     }
 
     const idDoPagamento = mpData.id.toString();
 
-    // === 2. SEGUNDO: SALVAMOS NO BANCO COM O ID ÚNICO (SEM DELETAR HISTÓRICO) ===
+    // === 2. SEGUNDO: SALVAMOS NA TABELA "inscricoes" DO SUPABASE ===
     const dadosParaSalvar = participantes.map((p, index) => {
-      const cpfLimpo = p.cpf ? p.cpf.replace(/\D/g, '') : null;
-      
       return {
+        payment_id: idDoPagamento,
+        status: 'pendente', // Usamos pendente em vez de pago: false
+        tipo_inscricao: index === 0 ? 'titular' : 'acompanhante',
         nome: p.name || 'Sem Nome',
-        email: index === 0 ? emailPrincipal : (p.email || emailPrincipal),
-        telefone: index === 0 ? telefoneTitular : (p.phone ? p.phone.replace(/\D/g, '') : telefoneTitular),
-        cpf: index === 0 ? cpfLimpo : null, 
-        contato_emergencia: contatoEmergencia || null,
-        pago: false,
-        payment_id: idDoPagamento // <--- Aqui está o pulo do gato! Salvando o recibo!
+        equipe: p.equipe || null, // Pegando o nome da equipe!
+        whatsapp: p.phone || telefoneTitular,
+        cpf: p.cpf ? p.cpf.replace(/\D/g, '') : null,
+        email: p.email || emailPrincipal,
+        emergencia_nome: p.emergencyName || participantes[0].emergencyName,
+        emergencia_fone: p.emergencyPhone || participantes[0].emergencyPhone,
+        valor_pago: index === 0 ? Number(valorTotal) : 0 // Titular guarda o valor total
       };
     });
 
-    const { error: erroInsert } = await supabase.from('inscricao_trilha').insert(dadosParaSalvar);
+    // Inserindo na tabela correta que criamos juntos
+    const { error: erroInsert } = await supabase.from('inscricoes').insert(dadosParaSalvar);
     
     if (erroInsert) {
       console.error("Erro do Supabase:", erroInsert);

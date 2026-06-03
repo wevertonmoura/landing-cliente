@@ -1,22 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  'https://revyeudqlndidaiprabc.supabase.co',
-  process.env.SUPABASE_SERVICE_KEY
-);
+// Usando as suas chaves seguras do .env
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
   try {
-    // Conta quantas linhas têm 'pago: true' no banco
+    // Conta exatamente quantos atletas já estão com status 'pago' na tabela nova
     const { count, error } = await supabase
-      .from('inscricao_trilha')
+      .from('inscricoes')
       .select('*', { count: 'exact', head: true })
-      .eq('pago', true);
+      .eq('status', 'pago');
 
-    if (error) throw error;
+    if (error) {
+      console.error("Erro do Supabase ao contar vagas:", error);
+      throw error;
+    }
 
     res.status(200).json({ total: count || 0 });
   } catch (error) {
+    console.error("Erro no servidor ao buscar vagas:", error);
     res.status(500).json({ error: 'Erro ao buscar vagas' });
   }
 }
