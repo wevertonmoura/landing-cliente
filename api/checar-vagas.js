@@ -6,6 +6,12 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
+  // Prevenção de bloqueio de CORS na Vercel
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  
   try {
     // Conta exatamente quantos atletas já estão com status 'pago' na tabela nova
     const { count, error } = await supabase

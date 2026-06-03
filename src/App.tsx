@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // IMPORTAÇÕES DOS COMPONENTES
 import Admin from './Admin';
+import AdminLogin from './components/AdminLogin'; // <-- Novo componente de Login importado
 import { validarCPF, formatarMoeda } from './utils/helpers';
 import HeroSection from './components/HeroSection';
 import EventInfo from './components/EventInfo';
@@ -79,18 +80,21 @@ const OsDSempreTrilha = () => {
     }
   }, []);
 
-  const handleLoginAdmin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // --- NOVA FUNÇÃO DE LOGIN DO ADMIN ---
+  const realizarLoginAdmin = async (senhaDigitada: string) => {
+    setSenhaAdmin(senhaDigitada);
     setErroLoginAdmin('');
     try {
       const res = await fetch('/api/admin-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senha: senhaAdmin })
+        body: JSON.stringify({ senha: senhaDigitada })
       });
       if (res.ok) setTelaAtual('admin');
-      else setErroLoginAdmin('Senha incorreta.');
-    } catch { setErroLoginAdmin('Erro de comunicação.'); }
+      else setErroLoginAdmin('Senha incorreta. Tente novamente.');
+    } catch { 
+      setErroLoginAdmin('Erro de comunicação com o servidor.'); 
+    }
   };
 
   useEffect(() => {
@@ -242,16 +246,14 @@ const OsDSempreTrilha = () => {
     window.location.reload();
   };
 
+  // --- RENDERIZAÇÃO DA NOVA TELA DE LOGIN ---
   if (telaAtual === 'login_admin') {
     return (
-      <div className="min-h-screen w-full bg-[#020412] text-white font-sans selection:bg-yellow-400 selection:text-black overflow-x-hidden">
-        <form onSubmit={handleLoginAdmin} className="bg-blue-900/20 p-8 rounded-3xl border border-blue-800/50 shadow-xl max-w-sm w-full space-y-4 backdrop-blur-sm">
-          <h2 className="text-2xl font-black text-white uppercase text-center mb-6">Acesso Restrito</h2>
-          <input type="password" value={senhaAdmin} onChange={e => setSenhaAdmin(e.target.value)} className="w-full bg-[#020412] border border-blue-800 rounded-xl px-4 py-3 text-white focus:border-yellow-400 outline-none" placeholder="Senha de Admin" />
-          {erroLoginAdmin && <p className="text-red-400 text-xs font-bold text-center">{erroLoginAdmin}</p>}
-          <button type="submit" className="w-full bg-yellow-400 hover:bg-yellow-500 text-[#020412] font-black py-3 rounded-xl uppercase transition-colors">Entrar</button>
-        </form>
-      </div>
+      <AdminLogin 
+        aoLogar={realizarLoginAdmin} 
+        erro={erroLoginAdmin} 
+        fecharAdmin={() => setTelaAtual('formulario')} 
+      />
     );
   }
 

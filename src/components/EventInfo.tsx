@@ -43,7 +43,7 @@ export default function EventInfo({ images, setSelectedImg }: EventInfoProps) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {images.map((img, i) => (
               <motion.div key={i} whileHover={{ scale: 1.05 }} className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer group shadow-md border border-blue-800/50 bg-blue-900/50" onClick={() => setSelectedImg(img)}>
-                <img src={img} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+               <img src={img} alt="Cenário do evento" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-yellow-400/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Maximize2 className="text-white drop-shadow-md" size={24} /></div>
               </motion.div>
             ))}

@@ -2,8 +2,9 @@ import { Users, Instagram, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Footer() {
-  const linkGrupoGeral = "https://chat.whatsapp.com/H5DWJOz0wcC2PntYSq1t8y"; 
-  const linkInstagram = "https://www.instagram.com/vem_para_trilha?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="; 
+  // Links atualizados para o OS D'SEMPRE
+  const linkGrupoGeral = "https://chat.whatsapp.com/DB4CizXQ1NyBsGQ6pnR8DL?s=cl&p=i&mlu=3"; 
+  const linkInstagram = "https://www.instagram.com/osdsempre_oficial?igsh=MXFmdGlmdW1lYjBqMQ%3D%3D&utm_source=qr"; 
 
   return (
     <footer className="bg-[#020412] pt-12 pb-6 border-t border-blue-900/50 relative overflow-hidden mt-12">
