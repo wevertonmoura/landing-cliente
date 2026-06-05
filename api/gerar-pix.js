@@ -35,7 +35,8 @@ export default async function handler(req, res) {
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+        // 👇 ATUALIZAÇÃO 1: Usando a chave do seu cliente que salvamos na Vercel
+        'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN_CLIENTE}`,
         'Content-Type': 'application/json',
         'X-Idempotency-Key': `pix-${Date.now()}-${cpfTitular}` 
       },
@@ -44,12 +45,14 @@ export default async function handler(req, res) {
         description: `Inscrição OS D'SEMPRE - ${participantes[0].name}`,
         payment_method_id: 'pix',
         payer: {
-          email: emailPrincipal || 'osdsempre@contato.com', // Prevenção caso o e-mail venha vazio
+          email: emailPrincipal || 'osdsempre@contato.com',
           first_name: firstName,
           last_name: lastName,
           identification: { type: 'CPF', number: cpfTitular }
         },
-        notification_url: webhookUrl
+        notification_url: webhookUrl,
+        // 👇 ATUALIZAÇÃO 2: A MÁGICA DO SPLIT - Sua taxa retida automaticamente
+        application_fee: 5.00
       })
     });
 
@@ -62,14 +65,14 @@ export default async function handler(req, res) {
 
     const idDoPagamento = mpData.id.toString();
 
-    // === 4. SALVANDO NO SUPABASE (Com o nome da coluna corrigido) ===
+    // === 4. SALVANDO NO SUPABASE ===
     const dadosParaSalvar = participantes.map((p, index) => {
       return {
         payment_id: idDoPagamento,
         status: 'pendente',
         nome: p.name || 'Sem Nome',
         equipe: p.equipe || null,
-        telefone: p.phone ? p.phone.replace(/\D/g, '') : telefoneTitular, // Corrigido de 'whatsapp' para 'telefone'
+        telefone: p.phone ? p.phone.replace(/\D/g, '') : telefoneTitular,
         cpf: p.cpf ? p.cpf.replace(/\D/g, '') : null,
         emergencia_nome: p.emergencyName || participantes[0].emergencyName,
         emergencia_fone: p.emergencyPhone || participantes[0].emergencyPhone,

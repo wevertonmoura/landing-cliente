@@ -12,21 +12,38 @@ export default function Footer() {
       
       <div className="container mx-auto px-4 text-center relative z-10">
         
+        {/* CAIXA DE REDES SOCIAIS */}
         <div className="max-w-md mx-auto mb-8 bg-blue-900/30 border border-blue-800/50 rounded-2xl p-6 backdrop-blur-sm relative overflow-hidden group">
           <h4 className="text-white font-black uppercase tracking-widest mb-4 flex items-center justify-center gap-2 text-sm">
             Faça parte da família <Users size={16} className="text-yellow-400"/>
           </h4>
           
           <div className="flex flex-col sm:flex-row gap-3">
-            <motion.a whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} href={linkInstagram} target="_blank" className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black py-3 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 text-[11px] uppercase tracking-widest">
-              <Instagram size={16} /> Siga no Insta
+            <motion.a 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }} 
+              href={linkInstagram} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black py-3 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 text-[11px] uppercase tracking-widest"
+            >
+              <Instagram size={16} /> Ver o Insta
             </motion.a>
-            <motion.a whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} href={linkGrupoGeral} target="_blank" className="flex-1 bg-yellow-400 text-[#020412] hover:bg-yellow-500 font-black py-3 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 text-[11px] uppercase tracking-widest transition-colors">
-              Entrar no Grupo
+            
+            <motion.a 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }} 
+              href={linkGrupoGeral} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex-1 bg-[#25D366] text-white hover:bg-[#20bd5a] font-black py-3 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 text-[11px] uppercase tracking-widest transition-colors"
+            >
+              <Users size={16} /> Entrar no Grupo
             </motion.a>
           </div>
         </div>
 
+        {/* DIREITOS AUTORAIS E VOLTAR AO TOPO */}
         <div className="flex flex-col items-center gap-4 border-t border-blue-900/50 pt-6">
           <p className="text-blue-200 text-[10px] font-bold uppercase tracking-widest">© 2026 TRAILL OS D'SEMPRE. Todos os direitos reservados.</p>
           
