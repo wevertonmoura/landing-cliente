@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Usando a mesma lógica de variáveis do projeto da Trilha
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -14,7 +13,6 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ message: 'Método não permitido' });
 
-  // Padrão igualzinho ao projeto da Trilha
   const tokenMP = process.env.MP_ACCESS_TOKEN;
   
   if (!tokenMP) {
@@ -29,6 +27,10 @@ export default async function handler(req, res) {
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
     const webhookUrl = 'https://landing-cliente-two.vercel.app/api/webhook';
 
+    // === ADICIONANDO A SUA COMISSÃO ===
+    // Converte o valor original para número e soma os R$ 5,00 da sua taxa
+    const valorComComissao = Number(valorTotal) + 5;
+
     // === 1. PRIMEIRO: GERAMOS O PIX ===
     const payerName = participantes[0].name.trim().split(" ");
     const firstName = payerName[0];
@@ -42,7 +44,7 @@ export default async function handler(req, res) {
         'X-Idempotency-Key': `pix-${Date.now()}-${cpfTitular}` 
       },
       body: JSON.stringify({
-        transaction_amount: Number(valorTotal),
+        transaction_amount: valorComComissao, // <-- O cliente paga o valor com a comissão inclusa
         description: `Inscrição OS D'SEMPRE - ${participantes[0].name}`,
         payment_method_id: 'pix',
         payer: {
@@ -51,14 +53,13 @@ export default async function handler(req, res) {
           last_name: lastName,
           identification: { type: 'CPF', number: cpfTitular }
         },
-        external_reference: emailPrincipal, // <-- O pulo do gato da Trilha para o webhook!
+        external_reference: emailPrincipal, 
         notification_url: webhookUrl
       })
     });
 
     const mpData = await response.json();
 
-    // Se der erro na geração do PIX, paramos aqui e avisamos o usuário
     if (!mpData.id) {
       console.error("Erro na API do Mercado Pago:", mpData);
       return res.status(400).json({ error: 'Erro na API do Mercado Pago', details: mpData });
@@ -66,19 +67,20 @@ export default async function handler(req, res) {
 
     const idDoPagamento = mpData.id.toString();
 
-    // === 2. SEGUNDO: SALVAMOS NO BANCO (Adaptado para Os D'Sempre) ===
+    // === 2. SEGUNDO: SALVAMOS NO BANCO ===
     const dadosParaSalvar = participantes.map((p, index) => {
       const cpfLimpo = p.cpf ? p.cpf.replace(/\D/g, '') : null;
 
       return {
         payment_id: idDoPagamento,
-        status: 'pendente', // Mantendo o formato do novo banco
+        status: 'pendente',
         nome: p.name || 'Sem Nome',
         equipe: p.equipe || null,
         telefone: index === 0 ? telefoneTitular : (p.phone ? p.phone.replace(/\D/g, '') : telefoneTitular),
         cpf: cpfLimpo,
         emergencia_nome: p.emergencyName || participantes[0].emergencyName,
         emergencia_fone: p.emergencyPhone || participantes[0].emergencyPhone,
+        // Salva no banco apenas o valor original do evento para o controle financeiro deles não dar furo
         valor_pago: index === 0 ? Number(valorTotal) : 0 
       };
     });
