@@ -25,7 +25,7 @@ export default async function handler(req, res) {
   try {
     const cpfTitular = participantes[0].cpf.replace(/\D/g, '');
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
-    const webhookUrl = 'https://landing-cliente-two.vercel.app/api/webhook';
+    const webhookUrl = 'https://trilhasdsempre.vercel.app/api/webhook';
 
     // === ADICIONANDO A SUA COMISSÃO ===
     // Converte o valor original para número e soma os R$ 5,00 da sua taxa
