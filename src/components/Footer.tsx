@@ -9,15 +9,15 @@ export default function Footer() {
   return (
     <footer className="bg-[#020412] pt-12 pb-6 border-t border-blue-900/50 relative overflow-hidden mt-12">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-1 bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent blur-sm"></div>
-      
+
       <div className="container mx-auto px-4 text-center relative z-10">
-        
+
         {/* CAIXA DE REDES SOCIAIS */}
         <div className="max-w-md mx-auto mb-8 bg-blue-900/30 border border-blue-800/50 rounded-2xl p-6 backdrop-blur-sm relative overflow-hidden group">
           <h4 className="text-white font-black uppercase tracking-widest mb-4 flex items-center justify-center gap-2 text-sm">
             Faça parte da família <Users size={16} className="text-yellow-400"/>
           </h4>
-          
+
           <div className="flex flex-col sm:flex-row gap-3">
             <motion.a 
               whileHover={{ scale: 1.05 }} 
@@ -29,7 +29,7 @@ export default function Footer() {
             >
               <Instagram size={16} /> Ver o Insta
             </motion.a>
-            
+
             <motion.a 
               whileHover={{ scale: 1.05 }} 
               whileTap={{ scale: 0.95 }} 
@@ -46,14 +46,12 @@ export default function Footer() {
         {/* DIREITOS AUTORAIS E VOLTAR AO TOPO */}
         <div className="flex flex-col items-center gap-4 border-t border-blue-900/50 pt-6">
           <p className="text-blue-200 text-[10px] font-bold uppercase tracking-widest">© 2026 TRAILL OS D'SEMPRE. Todos os direitos reservados.</p>
-          
+
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="py-2 px-6 rounded-full bg-blue-900/30 border border-blue-800/50 text-yellow-400 font-bold text-[10px] uppercase tracking-widest hover:bg-blue-800 hover:text-white flex items-center gap-2 transition-colors">
             Voltar ao Topo <ArrowRight className="-rotate-90 w-3 h-3" />
           </button>
         </div>
       </div>
-    </footer> 
-
-
+    </footer>
   );
 }

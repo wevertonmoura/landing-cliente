@@ -5,7 +5,6 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANO
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
-  // === REGRAS DE CORS ===
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -27,11 +26,8 @@ export default async function handler(req, res) {
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
     const webhookUrl = 'https://landing-cliente-two.vercel.app/api/webhook';
 
-    // === ADICIONANDO A SUA COMISSÃO ===
-    // Converte o valor original para número e soma os R$ 5,00 da sua taxa
     const valorComComissao = Number(valorTotal) + 5;
 
-    // === 1. PRIMEIRO: GERAMOS O PIX ===
     const payerName = participantes[0].name.trim().split(" ");
     const firstName = payerName[0];
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
@@ -44,7 +40,7 @@ export default async function handler(req, res) {
         'X-Idempotency-Key': `pix-${Date.now()}-${cpfTitular}` 
       },
       body: JSON.stringify({
-        transaction_amount: valorComComissao, // <-- O cliente paga o valor com a comissão inclusa
+        transaction_amount: valorComComissao,
         description: `Inscrição OS D'SEMPRE - ${participantes[0].name}`,
         payment_method_id: 'pix',
         payer: {
@@ -67,7 +63,6 @@ export default async function handler(req, res) {
 
     const idDoPagamento = mpData.id.toString();
 
-    // === 2. SEGUNDO: SALVAMOS NO BANCO ===
     const dadosParaSalvar = participantes.map((p, index) => {
       const cpfLimpo = p.cpf ? p.cpf.replace(/\D/g, '') : null;
 
@@ -80,7 +75,6 @@ export default async function handler(req, res) {
         cpf: cpfLimpo,
         emergencia_nome: p.emergencyName || participantes[0].emergencyName,
         emergencia_fone: p.emergencyPhone || participantes[0].emergencyPhone,
-        // Salva no banco apenas o valor original do evento para o controle financeiro deles não dar furo
         valor_pago: index === 0 ? Number(valorTotal) : 0 
       };
     });
@@ -92,7 +86,6 @@ export default async function handler(req, res) {
       throw new Error(`Erro do Banco de Dados: ${erroInsert.message}`);
     }
 
-    // === 3. DEVOLVEMOS O QR CODE PARA A TELA ===
     res.status(200).json(mpData);
 
   } catch (error) {
