@@ -44,6 +44,7 @@ export default function Footer() {
         </div>
 
         {/* DIREITOS AUTORAIS E VOLTAR AO TOPO */}
+        {/* DIREITOS AUTORAIS E VOLTAR AO TOPO */}
         <div className="flex flex-col items-center gap-4 border-t border-blue-900/50 pt-6">
           <p className="text-blue-200 text-[10px] font-bold uppercase tracking-widest">© 2026 TRAILL OS D'SEMPRE. Todos os direitos reservados.</p>
 
