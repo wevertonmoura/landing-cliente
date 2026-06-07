@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Garante que o Supabase inicie de forma segura
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+// Usando a mesma lógica de variáveis do projeto da Trilha
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
@@ -14,15 +14,12 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ message: 'Método não permitido' });
 
-  // === TRAVA DE SEGURANÇA PARA A VERCEL (NOVO) ===
-  const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  // Padrão igualzinho ao projeto da Trilha
+  const tokenMP = process.env.MP_ACCESS_TOKEN;
   
   if (!tokenMP) {
-    console.error("ERRO GRAVE: MERCADOPAGO_ACCESS_TOKEN não foi encontrado na Vercel!");
-    return res.status(500).json({ 
-        error: "Erro de configuração no servidor.", 
-        details: "O Access Token do Mercado Pago está ausente." 
-    });
+    console.error("ERRO GRAVE: MP_ACCESS_TOKEN não foi encontrado na Vercel!");
+    return res.status(500).json({ error: 'Erro de Servidor', details: 'Token do MP ausente' });
   }
 
   const { participantes, valorTotal, emailPrincipal } = req.body;
@@ -32,11 +29,11 @@ export default async function handler(req, res) {
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
     const webhookUrl = 'https://landing-cliente-two.vercel.app/api/webhook';
 
+    // === 1. PRIMEIRO: GERAMOS O PIX ===
     const payerName = participantes[0].name.trim().split(" ");
     const firstName = payerName[0];
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
     
-    // === REQUISIÇÃO LIMPA PARA O MERCADO PAGO ===
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
@@ -54,48 +51,50 @@ export default async function handler(req, res) {
           last_name: lastName,
           identification: { type: 'CPF', number: cpfTitular }
         },
+        external_reference: emailPrincipal, // <-- O pulo do gato da Trilha para o webhook!
         notification_url: webhookUrl
       })
     });
 
     const mpData = await response.json();
 
-    // Se o Mercado Pago recusar (ex: CPF falso), captura o erro aqui
+    // Se der erro na geração do PIX, paramos aqui e avisamos o usuário
     if (!mpData.id) {
-      console.error("Erro recusado pelo MP:", mpData);
-      return res.status(400).json({ error: 'Erro ao gerar pagamento', details: mpData });
+      console.error("Erro na API do Mercado Pago:", mpData);
+      return res.status(400).json({ error: 'Erro na API do Mercado Pago', details: mpData });
     }
 
-    // === SALVANDO NO SUPABASE ===
     const idDoPagamento = mpData.id.toString();
-    const dadosParaSalvar = participantes.map((p, index) => ({
-      payment_id: idDoPagamento,
-      status: 'pendente',
-      nome: p.name || 'Sem Nome',
-      equipe: p.equipe || null,
-      telefone: p.phone ? p.phone.replace(/\D/g, '') : telefoneTitular,
-      cpf: p.cpf ? p.cpf.replace(/\D/g, '') : null,
-      emergencia_nome: p.emergencyName || participantes[0].emergencyName,
-      emergencia_fone: p.emergencyPhone || participantes[0].emergencyPhone,
-      valor_pago: index === 0 ? Number(valorTotal) : 0 
-    }));
+
+    // === 2. SEGUNDO: SALVAMOS NO BANCO (Adaptado para Os D'Sempre) ===
+    const dadosParaSalvar = participantes.map((p, index) => {
+      const cpfLimpo = p.cpf ? p.cpf.replace(/\D/g, '') : null;
+
+      return {
+        payment_id: idDoPagamento,
+        status: 'pendente', // Mantendo o formato do novo banco
+        nome: p.name || 'Sem Nome',
+        equipe: p.equipe || null,
+        telefone: index === 0 ? telefoneTitular : (p.phone ? p.phone.replace(/\D/g, '') : telefoneTitular),
+        cpf: cpfLimpo,
+        emergencia_nome: p.emergencyName || participantes[0].emergencyName,
+        emergencia_fone: p.emergencyPhone || participantes[0].emergencyPhone,
+        valor_pago: index === 0 ? Number(valorTotal) : 0 
+      };
+    });
 
     const { error: erroInsert } = await supabase.from('inscricoes').insert(dadosParaSalvar);
     
-    // Convertendo o throw em return para não quebrar a API
     if (erroInsert) {
-      console.error("Erro BD:", erroInsert);
-      return res.status(500).json({ error: 'Erro ao salvar no banco de dados', details: erroInsert.message });
+      console.error("Erro do Supabase:", erroInsert);
+      throw new Error(`Erro do Banco de Dados: ${erroInsert.message}`);
     }
 
-    // Tudo deu certo, devolve o PIX para o site
+    // === 3. DEVOLVEMOS O QR CODE PARA A TELA ===
     res.status(200).json(mpData);
 
   } catch (error) {
-    console.error("Detalhes do erro interno:", error);
-    return res.status(500).json({ 
-        error: "Falha na comunicação interna.", 
-        details: error.message || "Erro desconhecido" 
-    });
+    console.error("Erro no Servidor:", error);
+    res.status(500).json({ error: error.message || 'Erro interno ao processar inscrição' });
   }
 }
