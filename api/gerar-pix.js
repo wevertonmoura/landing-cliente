@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+// Garante que o Supabase inicie de forma segura
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
@@ -13,8 +14,19 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ message: 'Método não permitido' });
 
+  // === TRAVA DE SEGURANÇA PARA A VERCEL (NOVO) ===
+  const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  
+  if (!tokenMP) {
+    console.error("ERRO GRAVE: MERCADOPAGO_ACCESS_TOKEN não foi encontrado na Vercel!");
+    return res.status(500).json({ 
+        error: "Erro de configuração no servidor.", 
+        details: "O Access Token do Mercado Pago está ausente." 
+    });
+  }
+
   const { participantes, valorTotal, emailPrincipal } = req.body;
-console.log("Token carregado:", process.env.MERCADOPAGO_ACCESS_TOKEN ? "SIM" : "NÃO");
+
   try {
     const cpfTitular = participantes[0].cpf.replace(/\D/g, '');
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
@@ -28,8 +40,7 @@ console.log("Token carregado:", process.env.MERCADOPAGO_ACCESS_TOKEN ? "SIM" : "
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
-        // CORREÇÃO 1: Ajustado para o nome EXATO que está no seu arquivo .env
-        'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+        'Authorization': `Bearer ${tokenMP}`,
         'Content-Type': 'application/json',
         'X-Idempotency-Key': `pix-${Date.now()}-${cpfTitular}` 
       },
@@ -49,9 +60,10 @@ console.log("Token carregado:", process.env.MERCADOPAGO_ACCESS_TOKEN ? "SIM" : "
 
     const mpData = await response.json();
 
+    // Se o Mercado Pago recusar (ex: CPF falso), captura o erro aqui
     if (!mpData.id) {
-      console.error("Erro MP:", mpData);
-      return res.status(400).json({ error: 'Erro Mercado Pago', details: mpData });
+      console.error("Erro recusado pelo MP:", mpData);
+      return res.status(400).json({ error: 'Erro ao gerar pagamento', details: mpData });
     }
 
     // === SALVANDO NO SUPABASE ===
@@ -76,13 +88,13 @@ console.log("Token carregado:", process.env.MERCADOPAGO_ACCESS_TOKEN ? "SIM" : "
       return res.status(500).json({ error: 'Erro ao salvar no banco de dados', details: erroInsert.message });
     }
 
+    // Tudo deu certo, devolve o PIX para o site
     res.status(200).json(mpData);
 
   } catch (error) {
-    // CORREÇÃO 2: Retornando um status HTTP adequado em vez de fechar a conexão bruscamente
     console.error("Detalhes do erro interno:", error);
     return res.status(500).json({ 
-        error: "Falha na comunicação interna ou com o Mercado Pago.", 
+        error: "Falha na comunicação interna.", 
         details: error.message || "Erro desconhecido" 
     });
   }
