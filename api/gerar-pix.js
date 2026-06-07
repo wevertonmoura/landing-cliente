@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
-        // 👇 ATUALIZAÇÃO 1: Usando a chave do seu cliente que salvamos na Vercel
+        // 👇 Usando a chave do seu cliente que salvamos na Vercel
         'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN_CLIENTE}`,
         'Content-Type': 'application/json',
         'X-Idempotency-Key': `pix-${Date.now()}-${cpfTitular}` 
@@ -50,9 +50,8 @@ export default async function handler(req, res) {
           last_name: lastName,
           identification: { type: 'CPF', number: cpfTitular }
         },
-        notification_url: webhookUrl,
-        // 👇 ATUALIZAÇÃO 2: A MÁGICA DO SPLIT - Sua taxa retida automaticamente
-        application_fee: 5.00
+        notification_url: webhookUrl
+        // A linha "application_fee: 5.00" foi REMOVIDA daqui!
       })
     });
 
