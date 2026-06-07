@@ -8,10 +8,10 @@ import AdminLogin from './components/AdminLogin'; // <-- Novo componente de Logi
 import { validarCPF, formatarMoeda } from './utils/helpers';
 import HeroSection from './components/HeroSection';
 import EventInfo from './components/EventInfo';
-import Footer from './components/Footer';
+
 import FormularioInscricao from './components/FormularioInscricao';
 import TelaPix from './components/TelaPix';
-import FloatingSocial from './components/FloatingSocial';
+
 
 const OsDSempreTrilha = () => {
   const [loading, setLoading] = useState(false);
