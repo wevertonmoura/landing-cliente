@@ -27,9 +27,10 @@ export default async function handler(req, res) {
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
     const webhookUrl = 'https://trilhasdsempre.vercel.app/api/webhook';
 
-    // === ADICIONANDO A SUA COMISSÃO ===
-    // Converte o valor original para número e soma os R$ 5,00 da sua taxa
-    const valorComComissao = Number(valorTotal) + 5;
+    // === VALOR CORRETO ===
+    // O valorTotal já vem do Front-end com a sua taxa de R$ 5,00 inclusa (Ex: 40 + 5 = 45).
+    // O backend agora apenas repassa o valor exato para o Mercado Pago.
+    const valorComComissao = Number(valorTotal);
 
     // === 1. PRIMEIRO: GERAMOS O PIX ===
     const payerName = participantes[0].name.trim().split(" ");
@@ -44,7 +45,7 @@ export default async function handler(req, res) {
         'X-Idempotency-Key': `pix-${Date.now()}-${cpfTitular}` 
       },
       body: JSON.stringify({
-        transaction_amount: valorComComissao, // O cliente paga o valor com a comissão inclusa
+        transaction_amount: valorComComissao, // O cliente paga o valor exato gerado na tela
         description: `Inscrição OS D'SEMPRE - ${participantes[0].name}`,
         payment_method_id: 'pix',
         payer: {
@@ -80,7 +81,7 @@ export default async function handler(req, res) {
         cpf: cpfLimpo,
         emergencia_nome: p.emergencyName || participantes[0].emergencyName,
         emergencia_fone: p.emergencyPhone || participantes[0].emergencyPhone,
-        valor_pago: index === 0 ? Number(valorTotal) : 0 // Salva no banco apenas o valor original do evento para o controle financeiro deles não dar furo
+        valor_pago: index === 0 ? Number(valorTotal) : 0 // Fica registrado no banco o valor exato gerado
       };
     });
 
