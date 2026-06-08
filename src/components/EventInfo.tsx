@@ -60,12 +60,14 @@ export default function EventInfo({ images, setSelectedImg }: EventInfoProps) {
           <InfoRow icon={<MapPin className="text-yellow-400" />} title="Localização" text="Jaboatão dos Guararapes (Suassuna) - Próximo ao engenho Palmeiras" />
         </a>
         <div className="flex items-start gap-5">
-            <div className="text-yellow-400 mt-1"><Navigation /></div>
-            <div>
-                <h4 className="text-[10px] font-black uppercase text-blue-200 tracking-widest mb-1">Ponto de Encontro</h4>
-                <p className="text-[#020412] font-bold text-xl leading-tight bg-yellow-400 px-2 py-0.5 rounded-lg inline-block">Aconchego Familía Rural</p>
-            </div>
-        </div>
+    {/* Ícone com a cor amarela mantida apenas no desenho */}
+    <div className="text-yellow-400 mt-1"><Navigation /></div>
+    <div>
+        <h4 className="text-[10px] font-black uppercase text-blue-200 tracking-widest mb-1">Ponto de Encontro</h4>
+        {/* Mancha amarela removida. Texto alterado para branco (text-white) para dar leitura */}
+        <p className="text-white font-bold text-xl leading-tight">Aconchego Família Rural</p>
+    </div>
+</div>
         <InfoRow icon={<Trophy />} title="Investimento" text="R$ 40 Individual | R$ 35 (Equipes +10)" />
       </section>
 
