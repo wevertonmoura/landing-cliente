@@ -1,8 +1,8 @@
-
+import React from 'react';
 import { Calendar, MapPin, Trophy, Clock, Mountain, Droplets, Info, Trash2, ShieldCheck, Waves, Maximize2, Ticket, QrCode, Coffee, Navigation } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const InfoRow = ({ icon, title, text }: any) => (
+const InfoRow = ({ icon, title, text }: { icon: React.ReactNode, title: string, text: string }) => (
   <div className="flex items-start gap-5">
     <div className="text-yellow-400 mt-1">{icon}</div>
     <div>
@@ -12,7 +12,7 @@ const InfoRow = ({ icon, title, text }: any) => (
   </div>
 );
 
-const CheckItem = ({ text, icon }: any) => (
+const CheckItem = ({ text, icon }: { text: string, icon: React.ReactNode }) => (
   <div className="flex items-center gap-3 bg-blue-900/40 p-4 rounded-xl border border-blue-700/50 shadow-sm">
     <span className="text-yellow-400 shrink-0">{icon}</span>
     <span className="text-xs font-bold text-blue-50">{text}</span>
@@ -63,7 +63,7 @@ export default function EventInfo({ images, setSelectedImg }: EventInfoProps) {
             <div className="text-yellow-400 mt-1"><Navigation /></div>
             <div>
                 <h4 className="text-[10px] font-black uppercase text-blue-200 tracking-widest mb-1">Ponto de Encontro</h4>
-                <p className="text-[#020412] font-bold text-xl leading-tight bg-yellow-400 px-2 py-0.5 rounded-lg inline-block">A definir</p>
+                <p className="text-[#020412] font-bold text-xl leading-tight bg-yellow-400 px-2 py-0.5 rounded-lg inline-block">Aconchego Familía Rural</p>
             </div>
         </div>
         <InfoRow icon={<Trophy />} title="Investimento" text="R$ 40 Individual | R$ 35 (Equipes +10)" />
