@@ -47,6 +47,7 @@ const OsDSempreTrilha = () => {
     { name: '', email: '', phone: '', cpf: '', emergencyName: '', emergencyPhone: '', equipe: '' }
   ]);
 
+  
   const valorTotalCalculado = calcularValorIngressos(participants?.length || 1) + taxaPix;
 
   const [qrCodePix, setQrCodePix] = useState(''); 
