@@ -1,4 +1,3 @@
-import React from 'react';
 import { Instagram, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
