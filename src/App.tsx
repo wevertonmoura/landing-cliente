@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // IMPORTAÇÕES DOS COMPONENTES
 import Admin from './Admin';
-import AdminLogin from './components/AdminLogin'; // <-- Novo componente de Login importado
+import AdminLogin from './components/AdminLogin';
 import { validarCPF, formatarMoeda } from './utils/helpers';
 import HeroSection from './components/HeroSection';
 import EventInfo from './components/EventInfo';
@@ -31,35 +31,43 @@ const OsDSempreTrilha = () => {
   const [listaEsperaFone, setListaEsperaFone] = useState('');
   const [entrouLista, setEntrouLista] = useState(false);
 
-  // --- ATUALIZAÇÃO DE VALORES ---
-  const taxaPix = 5; // Atualizado para R$ 5,00
-  
-  const calcularValorIngressos = (qtd: number) => {
-    // Se a equipe tiver 10 ou mais atletas, cobra R$ 35 por pessoa. Senão, R$ 40.
-    if (qtd >= 10) {
-      return qtd * 35;
-    }
-    return qtd * 40;
-  };
-  // ------------------------------
-
-  const [participants, setParticipants] = useState([
-    { name: '', email: '', phone: '', cpf: '', emergencyName: '', emergencyPhone: '', equipe: '' }
+  // 🚀 CORREÇÃO DO TYPESCRIPT AQUI: Adicionado <any[]> e os campos do cupom
+  const [participants, setParticipants] = useState<any[]>([
+    { name: '', email: '', phone: '', cpf: '', emergencyName: '', emergencyPhone: '', equipe: '', cupom_aplicado: '', cupom_desconto: '0' }
   ]);
 
+  // ==========================================
+  // MATEMÁTICA FINANCEIRA ATUALIZADA (1º LOTE)
+  // ==========================================
+  const calcularValorBase = (qtd: number) => {
+    // Se a equipe tiver 10 ou mais atletas, cobra R$ 45 por pessoa. Senão, R$ 50.
+    if (qtd >= 10) {
+      return qtd * 45;
+    }
+    return qtd * 50;
+  };
 
-
-
-
+  // 1. Calcula o valor base dos ingressos puros
+  const valorBase = calcularValorBase(participants.length);
   
-  const valorTotalCalculado = calcularValorIngressos(participants?.length || 1) + taxaPix;
+  // 2. Verifica se o titular tem um cupom aplicado (vem do FormularioInscricao)
+  const descontoCupom = Number(participants[0]?.cupom_desconto || 0);
+  
+  // 3. Calcula a taxa do site (R$ 5,00 fixo por pessoa)
+  const taxaSite = participants.length * 5;
+  
+  // 4. Aplica o desconto em cima do valor base (antes da taxa)
+  const valorComDesconto = valorBase - (valorBase * (descontoCupom / 100));
+  
+  // 5. O Valor final absoluto que será cobrado no PIX
+  const valorFinalPix = valorComDesconto + taxaSite;
+  // ==========================================
 
   const [qrCodePix, setQrCodePix] = useState(''); 
   const [qrCodeImg, setQrCodeImg] = useState(''); 
   const [copiado, setCopiado] = useState(false);
   const [tempoRestante, setTempoRestante] = useState(900); 
 
-  // Imagens atualizadas para o cenário de trilha e cachoeira
   const images = ["/foto1.jpg", "/foto2.jpg", "/foto3.jpg", "/foto4.jpg"];
 
   useEffect(() => {
@@ -84,7 +92,6 @@ const OsDSempreTrilha = () => {
     }
   }, []);
 
-  // --- NOVA FUNÇÃO DE LOGIN DO ADMIN ---
   const realizarLoginAdmin = async (senhaDigitada: string) => {
     setSenhaAdmin(senhaDigitada);
     setErroLoginAdmin('');
@@ -138,12 +145,13 @@ const OsDSempreTrilha = () => {
     setParticipants(newParticipants);
   };
 
+  // 🚀 CORREÇÃO DO TYPESCRIPT AQUI: O novo atleta também nasce com as propriedades do cupom
   const addParticipant = () => {
     if (vagasOcupadas + participants.length >= LIMITE_VAGAS) {
       alert("Atenção: Vagas insuficientes para adicionar outro atleta!");
       return;
     }
-    setParticipants([...participants, { name: '', email: '', phone: '', cpf: '', emergencyName: '', emergencyPhone: '', equipe: '' }]);
+    setParticipants([...participants, { name: '', email: '', phone: '', cpf: '', emergencyName: '', emergencyPhone: '', equipe: '', cupom_aplicado: '', cupom_desconto: '0' }]);
   };
 
   const updateParticipant = (index: number, field: string, value: string) => {
@@ -214,7 +222,7 @@ const OsDSempreTrilha = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           participantes: participants,
-          valorTotal: valorTotalCalculado,
+          valorTotal: valorFinalPix, // ENVIANDO O VALOR FINAL JÁ CALCULADO PARA A API
           emailPrincipal: mainEmail,
           contatoEmergencia: mainEmergency
         })
@@ -250,7 +258,6 @@ const OsDSempreTrilha = () => {
     window.location.reload();
   };
 
-  // --- RENDERIZAÇÃO DA NOVA TELA DE LOGIN ---
   if (telaAtual === 'login_admin') {
     return (
       <AdminLogin 
@@ -343,7 +350,7 @@ const OsDSempreTrilha = () => {
                   errorMsg={errorMsg}
                   loading={loading}
                   handleSubmit={handleSubmit}
-                  valorTotal={valorTotalCalculado}
+                  valorTotal={valorBase} // O Formulário recebe o valor base para calcular a UI
                   formatarMoeda={formatarMoeda}
                 />
               ) : (
@@ -357,7 +364,7 @@ const OsDSempreTrilha = () => {
                   copiarPix={copiarPix}
                   tempoRestante={tempoRestante}
                   formatarTempo={formatarTempo}
-                  valorTotal={valorTotalCalculado}
+                  valorTotal={valorFinalPix} // A Tela de PIX mostra o valor final calculado com taxas e descontos
                   formatarMoeda={formatarMoeda}
                 />
               )}
@@ -365,7 +372,6 @@ const OsDSempreTrilha = () => {
           </div>
         </div>
       </main>
-     
       
     </div>
   );

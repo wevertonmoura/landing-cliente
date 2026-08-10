@@ -28,8 +28,7 @@ export default async function handler(req, res) {
     const webhookUrl = 'https://trilhasdsempre.vercel.app/api/webhook';
 
     // === VALOR CORRETO ===
-    // O valorTotal já vem do Front-end com a sua taxa de R$ 5,00 inclusa (Ex: 40 + 5 = 45).
-    // O backend agora apenas repassa o valor exato para o Mercado Pago.
+    // O valorTotal já vem do Front-end com a taxa e os descontos de cupom aplicados.
     const valorComComissao = Number(valorTotal);
 
     // === 1. PRIMEIRO: GERAMOS O PIX ===
@@ -45,11 +44,11 @@ export default async function handler(req, res) {
         'X-Idempotency-Key': `pix-${Date.now()}-${cpfTitular}` 
       },
       body: JSON.stringify({
-        transaction_amount: valorComComissao, // O cliente paga o valor exato gerado na tela
-        description: `Inscrição OS D'SEMPRE - ${participantes[0].name}`,
+        transaction_amount: valorComComissao,
+        description: `Corrida de Aniversário OS D'SEMPRE - ${participantes[0].name}`,
         payment_method_id: 'pix',
         payer: {
-          email: emailPrincipal || 'osdsempre@contato.com',
+          email: emailPrincipal || participantes[0].email || 'osdsempre@contato.com',
           first_name: firstName,
           last_name: lastName,
           identification: { type: 'CPF', number: cpfTitular }
@@ -67,6 +66,9 @@ export default async function handler(req, res) {
     }
 
     const idDoPagamento = mpData.id.toString();
+    
+    // Captura o cupom que vem lá da tela do front-end
+    const cupomAplicado = participantes[0].cupom_aplicado || null;
 
     // === 2. SEGUNDO: SALVAMOS NO BANCO ===
     const dadosParaSalvar = participantes.map((p, index) => {
@@ -76,23 +78,42 @@ export default async function handler(req, res) {
         payment_id: idDoPagamento,
         status: 'pendente',
         nome: p.name || 'Sem Nome',
-        equipe: p.equipe || null,
+        equipe: p.equipe || (index > 0 ? participantes[0].equipe : null),
         telefone: index === 0 ? telefoneTitular : (p.phone ? p.phone.replace(/\D/g, '') : telefoneTitular),
         cpf: cpfLimpo,
         emergencia_nome: p.emergencyName || participantes[0].emergencyName,
         emergencia_fone: p.emergencyPhone || participantes[0].emergencyPhone,
-        valor_pago: index === 0 ? Number(valorTotal) : 0 // Fica registrado no banco o valor exato gerado
+        valor_pago: index === 0 ? Number(valorTotal) : 0,
+        cupom_usado: cupomAplicado // Registramos se ele usou desconto!
       };
     });
 
-    const { error: erroInsert } = await supabase.from('inscricoes').insert(dadosParaSalvar);
+    // O .select() no final é mágico: ele salva e já devolve as linhas com os IDs gerados
+    const { data: inscricoesSalvas, error: erroInsert } = await supabase
+      .from('inscricoes')
+      .insert(dadosParaSalvar)
+      .select();
     
     if (erroInsert) {
       console.error("Erro do Supabase:", erroInsert);
       throw new Error(`Erro do Banco de Dados: ${erroInsert.message}`);
     }
 
-    // === 3. DEVOLVEMOS O QR CODE PARA A TELA ===
+    // === 3. TERCEIRO: GERAMOS O NÚMERO DE PEITO ÚNICO ===
+    if (inscricoesSalvas && inscricoesSalvas.length > 0) {
+      for (const inscricao of inscricoesSalvas) {
+        // Ex: Se o ID no banco for 15, o número de peito será 1015
+        const numeroPeitoUnico = inscricao.id + 1000;
+        
+        // Atualiza a linha no banco colocando o número de peito
+        await supabase
+          .from('inscricoes')
+          .update({ numero_peito: numeroPeitoUnico })
+          .eq('id', inscricao.id);
+      }
+    }
+
+    // === 4. DEVOLVEMOS O QR CODE PARA A TELA ===
     res.status(200).json(mpData);
 
   } catch (error) {

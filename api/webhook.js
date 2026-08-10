@@ -27,8 +27,9 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Processando pagamento ID: ${paymentId}`);
 
+    // Consultando a conta do cliente para achar o pagamento
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-      headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` }
+      headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN_CLIENTE}` }
     });
     
     if (!mpResponse.ok) {
@@ -53,12 +54,12 @@ export default async function handler(req, res) {
 
         if (!erroBusca && inscricoes && inscricoes.length > 0) {
           
-          // === MUDANÇA AQUI: Verificamos se o status ainda é 'pendente' ===
+          // === Verificamos se o status ainda é 'pendente' ===
           if (inscricoes[0].status === 'pendente') {
             
             console.log(`📝 Atualizando ${inscricoes.length} inscritos deste pagamento...`);
 
-            // === MUDANÇA AQUI: Atualizamos o status para 'pago' ===
+            // === Atualizamos o status para 'pago' ===
             const { error: erroUpdate } = await supabase
               .from('inscricoes')
               .update({ status: 'pago' })
@@ -69,34 +70,34 @@ export default async function handler(req, res) {
             } else {
               console.log("🚀 Banco de dados atualizado com SUCESSO!");
               
-              // 3. Disparar E-mail de Confirmação (Atualizado para o tema OS D'SEMPRE)
-              const nomesParticipantes = inscricoes.map(p => `<li>🎟️ <strong>${p.nome}</strong></li>`).join('');
+              // 3. Disparar E-mail de Confirmação (ATUALIZADO PARA A CORRIDA)
+              const nomesParticipantes = inscricoes.map(p => `<li>🎟️ <strong>${p.nome}</strong> (Peito: ${p.numero_peito || 'A definir'})</li>`).join('');
 
               const mailOptions = {
-                from: `"OS D'SEMPRE TRILHA" <${process.env.EMAIL_USER}>`, 
+                from: `"OS D'SEMPRE" <${process.env.EMAIL_USER}>`, 
                 to: emailPrincipal,
-                subject: '✅ Vaga Garantida: OS D\'SEMPRE TRILHA!', 
+                subject: '✅ Vaga Garantida: Corrida de Aniversário OS D\'SEMPRE!', 
                 html: `
                   <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; border: 1px solid #1e3a8a; border-radius: 10px; overflow: hidden;">
-                    <div style="background-color: #1e3a8a; padding: 20px; text-align: center; border-bottom: 4px solid #facc15;">
+                    <div style="background-color: #020412; padding: 20px; text-align: center; border-bottom: 4px solid #facc15;">
                       <h1 style="color: #facc15; margin: 0; font-style: italic; font-weight: 900;">PAGAMENTO CONFIRMADO!</h1>
                     </div>
                     <div style="padding: 30px; background-color: #fafafa; color: #374151;">
-                      <p style="font-size: 16px;">Olá! Seu PIX foi aprovado com sucesso.</p>
+                      <p style="font-size: 16px;">Olá! Seu PIX foi aprovado com sucesso e sua vaga está garantida na <strong>Corrida de Aniversário OS D'SEMPRE</strong>.</p>
                       <p style="font-size: 16px;">Aqui estão os atletas confirmados nesta inscrição:</p>
                       <ul style="font-size: 16px; list-style-type: none; padding: 0;">
                         ${nomesParticipantes}
                       </ul>
                       
-                      <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #1e3a8a;">
+                      <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #facc15;">
                         <h3 style="margin-top: 0; color: #111827;">Resumo do Evento</h3>
-                        <p style="margin: 5px 0;">📅 <strong>Data:</strong> 28 de Junho de 2026</p>
-                        <p style="margin: 5px 0;">⏰ <strong>Horários:</strong> Concentração: 05:30 | Largada: 06:30</p>
-                        <p style="margin: 5px 0;">📍 <strong>Local:</strong> Jaboatão dos Guararapes (Suassuna)</p>
+                        <p style="margin: 5px 0;">📅 <strong>Data:</strong> 29 de novembro</p>
+                        <p style="margin: 5px 0;">⏰ <strong>Horários:</strong> Concentração: 05h00 | Largada: 06h00</p>
+                        <p style="margin: 5px 0;">📍 <strong>Local:</strong> Terminal da UR-11</p>
                       </div>
 
                       <p style="margin-top: 25px; font-size: 14px;">Qualquer dúvida, entre em contato via WhatsApp com a organização.</p>
-                      <p>Nos vemos na trilha!<br><strong>Equipe OS D'SEMPRE</strong></p>
+                      <p>Prepare a energia e o sorriso! Nos vemos na corrida! 🏃‍♂️💨<br><strong>Equipe OS D'SEMPRE</strong></p>
                     </div>
                   </div>
                 `
