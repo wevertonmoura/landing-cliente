@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   UserCheck, DollarSign, Users, ArrowLeft, Loader2, Search, 
-  Check, Download, Trash2, Clock, MessageCircle, AlertCircle,
+  Check, Download, Trash2, Clock, MessageCircle,
   Trophy, Activity, Map, Ticket, Percent
 } from 'lucide-react';
 
