@@ -287,7 +287,7 @@ const OsDSempreTrilha = () => {
       <main className="container mx-auto px-4 md:px-6 py-12 max-w-5xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           
-          <EventInfo images={images} setSelectedImg={setSelectedImg} />
+          
 
           <div className="lg:col-span-1 mt-10 lg:mt-0">
             <section id="inscricao" className="lg:sticky lg:top-8 bg-blue-900/10 backdrop-blur-md border border-blue-800/30 rounded-[2.5rem] p-6 md:p-10 shadow-2xl">
