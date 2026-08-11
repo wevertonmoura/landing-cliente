@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   UserCheck, DollarSign, Users, ArrowLeft, Loader2, Search, 
   Check, Download, Trash2, Clock, MessageCircle,
-  Trophy, Activity, Map, Ticket, Percent, Tag
+  Trophy, Activity, Map, Ticket, Tag
 } from 'lucide-react';
 
 // ==========================================
