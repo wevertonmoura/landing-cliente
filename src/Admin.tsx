@@ -2,35 +2,55 @@ import { useState, useEffect } from 'react';
 import { 
   UserCheck, DollarSign, Users, ArrowLeft, Loader2, Search, 
   Check, Download, Trash2, Clock, MessageCircle,
-  Trophy, Activity, Map, Ticket, Percent
+  Trophy, Activity, Map, Ticket, Percent, Tag
 } from 'lucide-react';
 
 // ==========================================
-// SUBCOMPONENTE 1: MODAL DE CUPONS
+// SUBCOMPONENTE 1: MODAL DE CUPONS AVANÇADO
 // ==========================================
 const ModalCupons = ({ senha, onClose }: { senha: string, onClose: () => void }) => {
   const [codigo, setCodigo] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [cuponsLista, setCuponsLista] = useState<any[]>([]);
+  const [carregandoLista, setCarregandoLista] = useState(true);
+
+  // Carrega a lista de cupons assim que o modal abre
+  useEffect(() => {
+    carregarCupons();
+  }, []);
+
+  const carregarCupons = async () => {
+    setCarregandoLista(true);
+    try {
+      const res = await fetch('/api/cupom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'listar', senha })
+      });
+      const data = await res.json();
+      if (res.ok) setCuponsLista(data);
+    } catch (err) {
+      console.error("Erro ao listar cupons:", err);
+    }
+    setCarregandoLista(false);
+  };
 
   const criarCupom = async (e: React.FormEvent) => {
     e.preventDefault();
     setSalvando(true);
     try {
-      // 🚀 ROTA E ACTION ATUALIZADAS AQUI
       const res = await fetch('/api/cupom', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Action 'criar' adicionada para o backend saber o que fazer
         body: JSON.stringify({ action: 'criar', senha, codigo, desconto_percentual: 10 }) 
       });
       
       const data = await res.json();
 
       if (res.ok) {
-        alert("Cupom de 10% criado com sucesso!");
-        onClose();
+        setCodigo('');
+        carregarCupons(); // Recarrega a lista para mostrar o novo cupom
       } else {
-        // Agora mostra o erro exato do banco (ex: Cupom duplicado)
         alert(`Erro: ${data.error || 'Não foi possível criar o cupom.'}`);
       }
     } catch (err) {
@@ -40,45 +60,84 @@ const ModalCupons = ({ senha, onClose }: { senha: string, onClose: () => void })
     }
   };
 
+  const excluirCupom = async (id: number, codigoCupom: string) => {
+    if (!window.confirm(`Apagar o cupom ${codigoCupom}?`)) return;
+    try {
+      const res = await fetch('/api/cupom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'excluir', senha, id })
+      });
+      if (res.ok) {
+        setCuponsLista(prev => prev.filter(c => c.id !== id));
+      } else {
+        alert("Erro ao excluir o cupom.");
+      }
+    } catch (err) {
+      alert("Falha na conexão.");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-      <div className="bg-blue-950 border border-blue-800 p-8 rounded-[2rem] w-full max-w-md shadow-2xl relative">
+      <div className="bg-blue-950 border border-blue-800 p-8 rounded-[2rem] w-full max-w-md shadow-2xl relative max-h-[90vh] flex flex-col">
         <button onClick={onClose} className="absolute top-6 right-6 text-blue-400 hover:text-white transition-colors">✕</button>
         
-        <h2 className="text-2xl font-black text-white uppercase italic mb-2 flex items-center gap-2">
-          <Ticket className="text-yellow-400" /> Gerar Cupom
+        <h2 className="text-2xl font-black text-white uppercase italic mb-2 flex items-center gap-2 shrink-0">
+          <Ticket className="text-yellow-400" /> Gerenciar Cupons
         </h2>
-        <p className="text-blue-300 text-xs mb-6">Este cupom aplicará automaticamente 10% de desconto no checkout.</p>
-
-        <form onSubmit={criarCupom} className="space-y-4">
+        
+        {/* FORMULÁRIO DE CRIAR (Fixo no topo) */}
+        <form onSubmit={criarCupom} className="space-y-4 shrink-0 mb-6 border-b border-blue-800/50 pb-6 mt-4">
           <div>
-            <label className="block text-blue-300 text-[10px] font-black uppercase tracking-widest mb-2">Código do Cupom</label>
             <input 
               type="text" 
               required
-              placeholder="Ex: OS-DSEMPRE-10"
+              placeholder="NOVO CÓDIGO (Ex: FDS10)"
               value={codigo}
               onChange={(e) => setCodigo(e.target.value.toUpperCase().replace(/\s+/g, ''))}
-              className="w-full bg-blue-900/50 border border-blue-800 rounded-xl p-4 text-white uppercase font-bold placeholder:text-blue-500/50 focus:outline-none focus:border-yellow-400 transition-colors"
+              className="w-full bg-blue-900/50 border border-blue-800 rounded-xl p-3 text-white uppercase font-bold placeholder:text-blue-500/50 focus:outline-none focus:border-yellow-400 transition-colors text-sm"
             />
           </div>
-
-          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-center justify-between">
-            <span className="text-emerald-400 text-xs font-bold uppercase tracking-widest">Desconto Fixo</span>
-            <span className="bg-emerald-500 text-[#020412] px-3 py-1 rounded-lg font-black flex items-center gap-1">
-              10 <Percent size={14}/>
-            </span>
-          </div>
-
           <button 
             type="submit" 
-            disabled={salvando}
-            className="w-full mt-4 bg-yellow-500 hover:bg-yellow-400 text-[#020412] px-6 py-4 rounded-xl flex items-center justify-center gap-2 text-sm font-black uppercase tracking-widest transition-all disabled:opacity-50"
+            disabled={salvando || !codigo}
+            className="w-full bg-yellow-500 hover:bg-yellow-400 text-[#020412] px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
           >
-            {salvando ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}
-            {salvando ? 'Salvando...' : 'Ativar Cupom'}
+            {salvando ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
+            {salvando ? 'Salvando...' : 'Criar Cupom de 10%'}
           </button>
         </form>
+
+        {/* LISTA DE CUPONS EXISTENTES (Rolável) */}
+        <div className="overflow-y-auto flex-1 pr-2 space-y-3 custom-scrollbar">
+          <h3 className="text-blue-300 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+            <Tag size={12}/> Cupons Ativos ({cuponsLista.length})
+          </h3>
+          
+          {carregandoLista ? (
+            <div className="flex justify-center py-4"><Loader2 className="animate-spin text-blue-400" /></div>
+          ) : cuponsLista.length === 0 ? (
+            <p className="text-blue-400/50 text-xs text-center py-4 italic">Nenhum cupom criado ainda.</p>
+          ) : (
+            cuponsLista.map((cupom, i) => (
+              <div key={i} className="bg-blue-900/30 border border-blue-800/50 rounded-xl p-3 flex items-center justify-between group hover:border-blue-700 transition-colors">
+                <div>
+                  <div className="text-white font-black uppercase text-sm tracking-widest">{cupom.codigo}</div>
+                  <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">{cupom.desconto_percentual}% OFF</div>
+                </div>
+                <button 
+                  onClick={() => excluirCupom(cupom.id, cupom.codigo)}
+                  className="text-blue-400 hover:text-red-400 bg-blue-900/50 hover:bg-red-500/10 p-2 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                  title="Apagar Cupom"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
       </div>
     </div>
   );
@@ -180,7 +239,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     link.click();
   };
 
-  // Cálculos Derivados
   const totalPagos = adminData.filter(p => p.status === 'pago').length;
   const totalPendentes = adminData.filter(p => p.status === 'pendente').length;
   const arrecadado = adminData.filter(p => p.status === 'pago').reduce((acc, curr) => acc + Number(curr.valor_pago || 0), 0); 
@@ -194,9 +252,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
   const ultimasInscricoes = adminData.slice(0, 5);
   const dadosFiltrados = adminData.filter(p => (p.nome || '').toLowerCase().includes(busca.toLowerCase()) || (p.whatsapp || p.telefone || '').includes(busca) || (p.equipe || '').toLowerCase().includes(busca.toLowerCase()));
 
-  // ==========================================
-  // RENDERIZAÇÃO
-  // ==========================================
   if (loading) return (
     <div className="min-h-screen bg-[#020412] flex flex-col items-center justify-center gap-4 relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-yellow-400/20 blur-[100px] rounded-full"></div>
@@ -213,7 +268,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
 
       <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
         
-        {/* HEADER LIMPO */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-blue-950/60 backdrop-blur-xl border border-blue-900/80 p-6 md:p-8 rounded-[2rem] gap-6 shadow-2xl">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl flex items-center justify-center shadow-lg shadow-yellow-500/20">
@@ -229,7 +283,7 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
               onClick={() => setModalCuponsAberto(true)} 
               className="flex-1 md:flex-none bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-6 py-4 rounded-xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest transition-all border border-emerald-500/30 shadow-lg"
             >
-              <Ticket size={16} /> Gerar Cupom (10%)
+              <Ticket size={16} /> Gerenciar Cupons
             </button>
             <button onClick={fecharAdmin} className="flex-1 md:flex-none bg-blue-900/80 hover:bg-blue-800 text-white px-6 py-4 rounded-xl flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-widest transition-all border border-blue-700 shadow-lg group">
               <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform"/> Sair
@@ -261,7 +315,7 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
           </div>
         </div>
 
-        {/* FEED E TABELA (MANTIDOS IGUAIS, APENAS REORGANIZADOS) */}
+        {/* FEED E TABELA */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-blue-950/60 backdrop-blur-xl rounded-[2rem] border border-blue-900/80 p-6 shadow-2xl">
             <h3 className="text-white font-black uppercase italic mb-6 flex items-center gap-2 border-b border-blue-800/50 pb-4">

@@ -5,7 +5,6 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANO
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
-  // === REGRAS DE CORS (Isto resolve o erro de "Falha de conexão") ===
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -13,60 +12,61 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
 
-  const { action, codigo, senha, desconto_percentual } = req.body;
-
-  if (!codigo) {
-    return res.status(400).json({ error: 'Código do cupom é obrigatório.' });
-  }
-
-  const codigoFormatado = codigo.toUpperCase().trim();
+  const { action, codigo, senha, desconto_percentual, id } = req.body;
 
   try {
+    const senhaCorreta = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD;
+
     // ==========================================
-    // AÇÃO 1: ADMIN CRIANDO O CUPOM
+    // TRAVA DE SEGURANÇA PARA AÇÕES DO ADMIN
     // ==========================================
-    if (action === 'criar') {
-      // Puxa a senha do painel da Vercel
-      const senhaCorreta = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD;
-      
+    if (['criar', 'listar', 'excluir'].includes(action)) {
       if (senhaCorreta && senha !== senhaCorreta) {
         return res.status(401).json({ error: 'Acesso negado: Senha incorreta.' });
       }
-
-      // INSERT NO SUPABASE
-      const { error } = await supabase
-        .from('cupons')
-        .insert([{ 
-          codigo: codigoFormatado, 
-          desconto_percentual: desconto_percentual || 10, 
-          ativo: true 
-        }]);
-
-      if (error) {
-        if (error.code === '23505') {
-          return res.status(400).json({ error: 'Este código já existe.' });
-        }
-        throw error;
-      }
-
-      return res.status(200).json({ success: true, message: 'Cupom criado com sucesso!' });
     }
 
-    // ==========================================
-    // AÇÃO 2: CORREDOR VALIDANDO NO CHECKOUT
-    // ==========================================
+    // AÇÃO: CRIAR
+    if (action === 'criar') {
+      if (!codigo) return res.status(400).json({ error: 'Código obrigatório.' });
+      const { error } = await supabase.from('cupons').insert([{ 
+        codigo: codigo.toUpperCase().trim(), 
+        desconto_percentual: desconto_percentual || 10, 
+        ativo: true 
+      }]);
+      if (error) {
+        if (error.code === '23505') return res.status(400).json({ error: 'Este código já existe.' });
+        throw error;
+      }
+      return res.status(200).json({ success: true });
+    }
+
+    // AÇÃO: LISTAR TODOS OS CUPONS
+    if (action === 'listar') {
+      const { data, error } = await supabase.from('cupons').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return res.status(200).json(data);
+    }
+
+    // AÇÃO: EXCLUIR CUPOM
+    if (action === 'excluir') {
+      if (!id) return res.status(400).json({ error: 'ID do cupom não informado.' });
+      const { error } = await supabase.from('cupons').delete().eq('id', id);
+      if (error) throw error;
+      return res.status(200).json({ success: true });
+    }
+
+    // AÇÃO: VALIDAR (USADO PELO CORREDOR NO CHECKOUT - SEM SENHA)
     if (action === 'validar') {
+      if (!codigo) return res.status(400).json({ error: 'Código não informado.' });
       const { data, error } = await supabase
         .from('cupons')
         .select('*')
-        .eq('codigo', codigoFormatado)
+        .eq('codigo', codigo.toUpperCase().trim())
         .eq('ativo', true)
         .single();
 
-      if (error || !data) {
-        return res.status(404).json({ error: 'Cupom inválido ou expirado.' });
-      }
-
+      if (error || !data) return res.status(404).json({ error: 'Cupom inválido ou expirado.' });
       return res.status(200).json({ valido: true, desconto_percentual: data.desconto_percentual });
     }
 
