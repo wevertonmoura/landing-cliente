@@ -1,16 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Inicializa o cliente do Supabase com as suas chaves seguras
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido' });
-  }
+  // === REGRAS DE CORS (Isto resolve o erro de "Falha de conexão") ===
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  // Recebe os dados do painel Admin ou do Checkout
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
+
   const { action, codigo, senha, desconto_percentual } = req.body;
 
   if (!codigo) {
@@ -24,12 +26,14 @@ export default async function handler(req, res) {
     // AÇÃO 1: ADMIN CRIANDO O CUPOM
     // ==========================================
     if (action === 'criar') {
-      // Trava de segurança (só entra se a senha for igual a do .env)
-      if (senha !== process.env.ADMIN_PASSWORD) {
+      // Puxa a senha do painel da Vercel
+      const senhaCorreta = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD;
+      
+      if (senhaCorreta && senha !== senhaCorreta) {
         return res.status(401).json({ error: 'Acesso negado: Senha incorreta.' });
       }
 
-      // INSERT DE VERDADE NO SUPABASE
+      // INSERT NO SUPABASE
       const { error } = await supabase
         .from('cupons')
         .insert([{ 
@@ -39,7 +43,6 @@ export default async function handler(req, res) {
         }]);
 
       if (error) {
-        // Verifica se tentou criar um código que já existe na tabela
         if (error.code === '23505') {
           return res.status(400).json({ error: 'Este código já existe.' });
         }
@@ -53,7 +56,6 @@ export default async function handler(req, res) {
     // AÇÃO 2: CORREDOR VALIDANDO NO CHECKOUT
     // ==========================================
     if (action === 'validar') {
-      // SELECT DE VERDADE NO SUPABASE
       const { data, error } = await supabase
         .from('cupons')
         .select('*')
@@ -68,7 +70,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ valido: true, desconto_percentual: data.desconto_percentual });
     }
 
-    // Se a action não for nem 'criar' nem 'validar'
     return res.status(400).json({ error: 'Ação inválida.' });
 
   } catch (error) {

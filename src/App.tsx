@@ -53,8 +53,8 @@ const OsDSempreTrilha = () => {
   // 2. Verifica se o titular tem um cupom aplicado (vem do FormularioInscricao)
   const descontoCupom = Number(participants[0]?.cupom_desconto || 0);
   
-  // 3. Calcula a taxa do site (R$ 5,00 fixo por pessoa)
-  const taxaSite = participants.length * 5;
+  // 3. 🚀 CORREÇÃO: A taxa do site agora é R$ 5,00 FIXO por compra, e não por pessoa
+  const taxaSite = 5;
   
   // 4. Aplica o desconto em cima do valor base (antes da taxa)
   const valorComDesconto = valorBase - (valorBase * (descontoCupom / 100));
@@ -68,6 +68,8 @@ const OsDSempreTrilha = () => {
   const [copiado, setCopiado] = useState(false);
   const [tempoRestante, setTempoRestante] = useState(900); 
 
+  // As imagens foram mantidas por enquanto, mas lembre-se que removemos a galeria do EventInfo. 
+  // O HeroSection ainda precisa delas!
   const images = ["/foto1.jpg", "/foto2.jpg", "/foto3.jpg", "/foto4.jpg"];
 
   useEffect(() => {

@@ -67,7 +67,10 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
 
   // Cálculos matemáticos para exibição do botão final
   const descontoPercentual = Number(participants[0]?.cupom_desconto || 0);
-  const taxaSite = participants.length * 5; // R$ 5,00 por atleta
+  
+  // 🚀 CORREÇÃO: Taxa agora é R$ 5,00 fixa para a compra inteira (igual no App.tsx)
+  const taxaSite = 5; 
+  
   const valorComDesconto = valorTotal - (valorTotal * (descontoPercentual / 100));
   const valorFinal = valorComDesconto + taxaSite;
 
