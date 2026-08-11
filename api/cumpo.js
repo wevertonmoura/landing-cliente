@@ -1,11 +1,16 @@
-// Importe seu banco de dados aqui (ex: import { sql } from '@vercel/postgres';)
+import { createClient } from '@supabase/supabase-js';
+
+// Inicializa o cliente do Supabase com as suas chaves seguras
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  // Recebe a 'action' para saber se é o admin criando ou o corredor validando
+  // Recebe os dados do painel Admin ou do Checkout
   const { action, codigo, senha, desconto_percentual } = req.body;
 
   if (!codigo) {
@@ -19,18 +24,27 @@ export default async function handler(req, res) {
     // AÇÃO 1: ADMIN CRIANDO O CUPOM
     // ==========================================
     if (action === 'criar') {
-      // Trava de segurança (só o Fábio com a senha consegue criar)
+      // Trava de segurança (só entra se a senha for igual a do .env)
       if (senha !== process.env.ADMIN_PASSWORD) {
         return res.status(401).json({ error: 'Acesso negado: Senha incorreta.' });
       }
 
-      // AQUI VOCÊ FAZ O INSERT NO BANCO:
-      /*
-      await sql`
-        INSERT INTO cupons (codigo, desconto_percentual, ativo)
-        VALUES (${codigoFormatado}, ${desconto_percentual}, true)
-      `;
-      */
+      // INSERT DE VERDADE NO SUPABASE
+      const { error } = await supabase
+        .from('cupons')
+        .insert([{ 
+          codigo: codigoFormatado, 
+          desconto_percentual: desconto_percentual || 10, 
+          ativo: true 
+        }]);
+
+      if (error) {
+        // Verifica se tentou criar um código que já existe na tabela
+        if (error.code === '23505') {
+          return res.status(400).json({ error: 'Este código já existe.' });
+        }
+        throw error;
+      }
 
       return res.status(200).json({ success: true, message: 'Cupom criado com sucesso!' });
     }
@@ -39,23 +53,19 @@ export default async function handler(req, res) {
     // AÇÃO 2: CORREDOR VALIDANDO NO CHECKOUT
     // ==========================================
     if (action === 'validar') {
-      // AQUI VOCÊ FAZ O SELECT NO BANCO:
-      /*
-      const { rows } = await sql`
-        SELECT * FROM cupons WHERE codigo = ${codigoFormatado} AND ativo = true
-      `;
-      const cupom = rows[0];
-      */
+      // SELECT DE VERDADE NO SUPABASE
+      const { data, error } = await supabase
+        .from('cupons')
+        .select('*')
+        .eq('codigo', codigoFormatado)
+        .eq('ativo', true)
+        .single();
 
-      // 👇 MOCK PARA VOCÊ TESTAR AGORA (Remova quando conectar o banco)
-      const cupom = { codigo: codigoFormatado, desconto_percentual: 10, ativo: true };
-      // 👆 FIM DO MOCK
-
-      if (!cupom) {
+      if (error || !data) {
         return res.status(404).json({ error: 'Cupom inválido ou expirado.' });
       }
 
-      return res.status(200).json({ valido: true, desconto_percentual: cupom.desconto_percentual });
+      return res.status(200).json({ valido: true, desconto_percentual: data.desconto_percentual });
     }
 
     // Se a action não for nem 'criar' nem 'validar'
@@ -63,12 +73,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error(`Erro na API de cupom [${action}]:`, error);
-    
-    // Se tentar criar um cupom com nome repetido
-    if (action === 'criar' && (error.code === '23505' || error.message.includes('unique'))) { 
-      return res.status(400).json({ error: 'Este código já existe.' });
-    }
-
     return res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 }

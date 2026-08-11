@@ -201,9 +201,7 @@ const OsDSempreTrilha = () => {
         if (!validarCPF(p.cpf)) { setErrorMsg(`⚠️ CPF Inválido! Verifique o número digitado pelo Titular.`); return; }
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(p.email)) { setErrorMsg("Digite um e-mail válido."); return; }
-        if (p.emergencyName.trim().length < 2 || p.emergencyPhone.replace(/\D/g, '').length < 10) { 
-          setErrorMsg("Preencha corretamente os dados de Emergência (SOS)."); return; 
-        }
+        // 🚀 REMOVIDA A VALIDAÇÃO DO CONTATO DE EMERGÊNCIA AQUI
       }
     }
     
@@ -214,7 +212,6 @@ const OsDSempreTrilha = () => {
     setStatusPagamento('pendente');
 
     try {
-      const mainEmergency = `${participants[0].emergencyName} - ${participants[0].emergencyPhone}`;
       const mainEmail = participants[0].email;
 
       const response = await fetch('/api/gerar-pix', {
@@ -224,7 +221,7 @@ const OsDSempreTrilha = () => {
           participantes: participants,
           valorTotal: valorFinalPix, // ENVIANDO O VALOR FINAL JÁ CALCULADO PARA A API
           emailPrincipal: mainEmail,
-          contatoEmergencia: mainEmergency
+          contatoEmergencia: 'Não informado' // 🚀 TEXTO FIXO PARA NÃO DAR ERRO NO BANCO DE DADOS
         })
       });
 
@@ -287,7 +284,7 @@ const OsDSempreTrilha = () => {
       <main className="container mx-auto px-4 md:px-6 py-12 max-w-5xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           
-          <EventInfo/>
+          <EventInfo />
 
           <div className="lg:col-span-1 mt-10 lg:mt-0">
             <section id="inscricao" className="lg:sticky lg:top-8 bg-blue-900/10 backdrop-blur-md border border-blue-800/30 rounded-[2.5rem] p-6 md:p-10 shadow-2xl">

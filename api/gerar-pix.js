@@ -25,7 +25,9 @@ export default async function handler(req, res) {
   try {
     const cpfTitular = participantes[0].cpf.replace(/\D/g, '');
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
-    const webhookUrl = 'https://trilhasdsempre.vercel.app/api/webhook';
+    
+    // 🚀 ATUALIZADO: Webhook apontando para o seu domínio novo
+    const webhookUrl = 'https://aniversario-osdsempre.vercel.app/api/webhook';
 
     // === VALOR CORRETO ===
     // O valorTotal já vem do Front-end com a taxa e os descontos de cupom aplicados.
@@ -81,8 +83,7 @@ export default async function handler(req, res) {
         equipe: p.equipe || (index > 0 ? participantes[0].equipe : null),
         telefone: index === 0 ? telefoneTitular : (p.phone ? p.phone.replace(/\D/g, '') : telefoneTitular),
         cpf: cpfLimpo,
-        emergencia_nome: p.emergencyName || participantes[0].emergencyName,
-        emergencia_fone: p.emergencyPhone || participantes[0].emergencyPhone,
+        email: index === 0 ? emailPrincipal : (p.email || emailPrincipal),
         valor_pago: index === 0 ? Number(valorTotal) : 0,
         cupom_usado: cupomAplicado // Registramos se ele usou desconto!
       };
