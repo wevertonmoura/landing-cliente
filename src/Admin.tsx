@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
-  UserCheck, DollarSign, Users, ArrowLeft, Loader2, Search, 
-  Check, Download, Trash2, Clock, MessageCircle,
-  Trophy, Activity, Map, Ticket, Percent, Tag, ShoppingCart
+  DollarSign, Users, ArrowLeft, Loader2, Search, 
+  Check, Download, Trash2, MessageCircle,
+  Trophy, Activity, Map, Ticket, Tag, ShoppingCart
 } from 'lucide-react';
 
 // ==========================================
@@ -202,7 +202,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     finally { setExcluindoId(null); }
   };
 
-  // 🚀 TEXTOS DO WHATSAPP ATUALIZADOS PARA A CORRIDA
   const chamarNoWhatsApp = (telefone: string, nome: string, status: string) => {
     let numeroFormatado = (telefone || '').replace(/\D/g, ''); 
     if (numeroFormatado.length === 10 || numeroFormatado.length === 11) numeroFormatado = '55' + numeroFormatado;
@@ -220,13 +219,12 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     window.open(`https://wa.me/${numeroFormatado}?text=${mensagem}`, '_blank');
   };
 
-  // 🚀 PLANILHA AGORA EXPORTA A COLUNA DO CUPOM USADO
   const exportarPlanilha = () => {
-    const headers = ["Data Inscrição", "Nome Completo", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Cupom Usado", "Contato de Emergência"];
+    const headers = ["Data Inscrição", "Nº Peito", "Nome Completo", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Cupom Usado", "Contato de Emergência"];
     const csvRows = adminData.map(p => {
       const dataFormatada = p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '';
       return [ 
-        `"${dataFormatada}"`, `"${p.nome || ''}"`, `"${p.equipe || 'Avulso'}"`, `"${p.cpf || ''}"`, 
+        `"${dataFormatada}"`, `"${p.numero_peito || 'N/A'}"`, `"${p.nome || ''}"`, `"${p.equipe || 'Avulso'}"`, `"${p.cpf || ''}"`, 
         `"${p.whatsapp || p.telefone || ''}"`, `"${p.status === 'pago' ? 'PAGO' : 'PENDENTE'}"`, 
         `"${p.valor_pago || 0}"`, `"${p.cupom_usado || 'Nenhum'}"`, `"${p.emergencia_nome || ''} - ${p.emergencia_fone || p.contato_emergencia || ''}"` 
       ].join(';'); 
@@ -238,14 +236,10 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     link.click();
   };
 
-  // ==========================================
-  // CÁLCULOS ESTÁTICOS & TRANSAÇÕES
-  // ==========================================
   const totalPagos = adminData.filter(p => p.status === 'pago').length;
   const totalPendentes = adminData.filter(p => p.status === 'pendente').length;
   const arrecadado = adminData.filter(p => p.status === 'pago').reduce((acc, curr) => acc + Number(curr.valor_pago || 0), 0); 
   
-  // 🚀 CONTA TRANSAÇÕES ÚNICAS (VENDAS) E CUPONS USADOS
   const transacoesUnicas = new Set(adminData.map(p => p.payment_id)).size;
   const totalCuponsUsados = adminData.filter(p => p.cupom_usado && p.cupom_usado.trim() !== '').length;
   
@@ -256,7 +250,13 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
   }, {});
   const rankingEquipes = Object.entries(equipesCount).map(([nome, qtde]) => ({ nome, quantidade: qtde as number })).sort((a, b) => b.quantidade - a.quantidade).slice(0, 5);
   const ultimasInscricoes = adminData.slice(0, 5);
-  const dadosFiltrados = adminData.filter(p => (p.nome || '').toLowerCase().includes(busca.toLowerCase()) || (p.whatsapp || p.telefone || '').includes(busca) || (p.equipe || '').toLowerCase().includes(busca.toLowerCase()));
+  
+  const dadosFiltrados = adminData.filter(p => 
+    (p.nome || '').toLowerCase().includes(busca.toLowerCase()) || 
+    (p.whatsapp || p.telefone || '').includes(busca) || 
+    (p.equipe || '').toLowerCase().includes(busca.toLowerCase()) ||
+    (p.numero_peito && p.numero_peito.toString().includes(busca))
+  );
 
   if (loading) return (
     <div className="min-h-screen bg-[#020412] flex flex-col items-center justify-center gap-4 relative overflow-hidden">
@@ -297,7 +297,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
           </div>
         </div>
 
-        {/* 🚀 CARDS DE ESTATÍSTICAS ATUALIZADOS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           <div className="bg-gradient-to-br from-blue-900/90 to-blue-950/90 p-6 rounded-[2rem] border border-blue-800/50 shadow-xl group">
             <div className="w-10 h-10 bg-blue-800/50 rounded-xl flex items-center justify-center text-blue-300 border border-blue-700/50 mb-2"><Users size={20}/></div>
@@ -326,7 +325,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
           </div>
         </div>
 
-        {/* FEED E TABELA */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-blue-950/60 backdrop-blur-xl rounded-[2rem] border border-blue-900/80 p-6 shadow-2xl">
             <h3 className="text-white font-black uppercase italic mb-6 flex items-center gap-2 border-b border-blue-800/50 pb-4">
@@ -352,7 +350,10 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
               {ultimasInscricoes.map((p, i) => (
                 <div key={i} className="bg-blue-900/30 p-4 rounded-xl border border-blue-800/30 flex justify-between items-start">
                   <div>
-                    <p className="text-white font-bold text-sm truncate max-w-[150px]">{p.nome || 'N/A'}</p>
+                    <p className="text-white font-bold text-sm truncate max-w-[150px]">
+                      <span className="text-yellow-400 mr-1">#{p.numero_peito || '---'}</span> 
+                      {p.nome || 'N/A'}
+                    </p>
                     <p className="text-blue-300 text-[10px] uppercase font-bold mt-1 tracking-wider">{p.equipe || 'Avulso'}</p>
                   </div>
                   <div>
@@ -366,12 +367,11 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
           </div>
         </div>
 
-        {/* TABELA DE DADOS */}
         <div className="bg-blue-950/60 backdrop-blur-xl rounded-[2.5rem] border border-blue-900/80 overflow-hidden shadow-2xl">
           <div className="p-6 md:p-8 border-b border-blue-900/80 bg-blue-950/40 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4 w-full md:w-auto flex-1">
               <div className="bg-blue-900/50 p-3 rounded-xl border border-blue-800/50"><Search size={20} className="text-yellow-400" /></div>
-              <input type="text" placeholder="Buscar por nome, equipe ou celular..." value={busca} onChange={(e) => setBusca(e.target.value)} className="bg-transparent border-none outline-none text-base md:text-lg font-bold text-white w-full placeholder:text-blue-400 focus:ring-0" />
+              <input type="text" placeholder="Buscar por número, nome ou equipe..." value={busca} onChange={(e) => setBusca(e.target.value)} className="bg-transparent border-none outline-none text-base md:text-lg font-bold text-white w-full placeholder:text-blue-400 focus:ring-0" />
             </div>
             <button onClick={exportarPlanilha} className="w-full md:w-auto bg-blue-900/50 hover:bg-blue-800 text-blue-300 px-6 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all border border-blue-800 shadow-lg">
               <Download size={18} /> Exportar
@@ -390,11 +390,13 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                 {dadosFiltrados.map((p, i) => (
                   <tr key={i} className="hover:bg-blue-900/20 transition-all duration-300 group">
                     <td className="p-6">
-                      <div className="font-black text-white text-base tracking-tight mb-1 group-hover:text-yellow-400 transition-colors">{p.nome || 'N/A'}</div>
+                      <div className="font-black text-white text-base tracking-tight mb-1 group-hover:text-yellow-400 transition-colors">
+                        <span className="text-yellow-400 mr-2">#{p.numero_peito || '---'}</span>
+                        {p.nome || 'N/A'}
+                      </div>
                       <div className="flex flex-wrap gap-2 items-center mt-2">
                         <span className="text-[10px] bg-blue-900/50 text-blue-200 px-2 py-1 rounded uppercase font-bold border border-blue-800">{p.equipe ? `Equipe: ${p.equipe}` : 'Avulso'}</span>
                         
-                        {/* 🚀 AQUI APARECE QUAL CUPOM O ATLETA USOU */}
                         {p.cupom_usado && p.cupom_usado.trim() !== '' && (
                           <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded uppercase font-bold border border-emerald-500/30 flex items-center gap-1">
                             <Ticket size={12}/> Cupom: {p.cupom_usado}
