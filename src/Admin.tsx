@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   UserCheck, DollarSign, Users, ArrowLeft, Loader2, Search, 
   Check, Download, Trash2, Clock, MessageCircle,
-  Trophy, Activity, Map, Ticket, Tag
+  Trophy, Activity, Map, Ticket, Percent, Tag, ShoppingCart
 } from 'lucide-react';
 
 // ==========================================
@@ -14,7 +14,6 @@ const ModalCupons = ({ senha, onClose }: { senha: string, onClose: () => void })
   const [cuponsLista, setCuponsLista] = useState<any[]>([]);
   const [carregandoLista, setCarregandoLista] = useState(true);
 
-  // Carrega a lista de cupons assim que o modal abre
   useEffect(() => {
     carregarCupons();
   }, []);
@@ -49,7 +48,7 @@ const ModalCupons = ({ senha, onClose }: { senha: string, onClose: () => void })
 
       if (res.ok) {
         setCodigo('');
-        carregarCupons(); // Recarrega a lista para mostrar o novo cupom
+        carregarCupons(); 
       } else {
         alert(`Erro: ${data.error || 'Não foi possível criar o cupom.'}`);
       }
@@ -87,7 +86,6 @@ const ModalCupons = ({ senha, onClose }: { senha: string, onClose: () => void })
           <Ticket className="text-yellow-400" /> Gerenciar Cupons
         </h2>
         
-        {/* FORMULÁRIO DE CRIAR (Fixo no topo) */}
         <form onSubmit={criarCupom} className="space-y-4 shrink-0 mb-6 border-b border-blue-800/50 pb-6 mt-4">
           <div>
             <input 
@@ -109,7 +107,6 @@ const ModalCupons = ({ senha, onClose }: { senha: string, onClose: () => void })
           </button>
         </form>
 
-        {/* LISTA DE CUPONS EXISTENTES (Rolável) */}
         <div className="overflow-y-auto flex-1 pr-2 space-y-3 custom-scrollbar">
           <h3 className="text-blue-300 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
             <Tag size={12}/> Cupons Ativos ({cuponsLista.length})
@@ -153,7 +150,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
   const [aprovandoId, setAprovandoId] = useState<string | null>(null); 
   const [excluindoId, setExcluindoId] = useState<string | null>(null);
   
-  // Estado para controlar a abertura do modal de cupons
   const [modalCuponsAberto, setModalCuponsAberto] = useState(false);
 
   useEffect(() => { carregarDados(); }, []);
@@ -206,6 +202,7 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     finally { setExcluindoId(null); }
   };
 
+  // 🚀 TEXTOS DO WHATSAPP ATUALIZADOS PARA A CORRIDA
   const chamarNoWhatsApp = (telefone: string, nome: string, status: string) => {
     let numeroFormatado = (telefone || '').replace(/\D/g, ''); 
     if (numeroFormatado.length === 10 || numeroFormatado.length === 11) numeroFormatado = '55' + numeroFormatado;
@@ -213,23 +210,25 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     const acompanhantes = adminData.filter(p => p.whatsapp === telefone && p.nome !== nome && p.status === 'pago');
     const nomesAcompanhantes = acompanhantes.map(a => a.nome.split(' ')[0]).join(', ');
     
-    let textoConfirmado = `Fala ${primeiroNome}, tudo bem? Aqui é da organização da *OS D'SEMPRE TRILHA*. 🌿\n\nPassando para avisar que a sua vaga está *CONFIRMADA* com sucesso! ✅\n\nQueria te pedir um favor: manda aqui uma foto sua e o seu @ do Instagram pra gente já ir entrando no clima do evento e conhecendo a galera.\n\n`;
+    let textoConfirmado = `Fala ${primeiroNome}, tudo bem? Aqui é da organização da *CORRIDA DE ANIVERSÁRIO OS D'SEMPRE*. 🏃‍♂️🏁\n\nPassando para avisar que a sua vaga está *CONFIRMADA* com sucesso! ✅\n\nQueria te pedir um favor: manda aqui uma foto sua e o seu @ do Instagram pra gente já ir entrando no clima do evento e conhecendo a galera.\n\n`;
     if (acompanhantes.length > 0) textoConfirmado += `Como você também garantiu a vaga do pessoal (${nomesAcompanhantes}), manda a foto e o @ deles aqui também, por favor!\n\n`;
-    textoConfirmado += `Em breve vamos criar o grupo oficial no WhatsApp com todos os atletas para passar os últimos detalhes (ponto de encontro, dicas, etc). Prepare-se para uma experiência incrível na natureza! Nos vemos na trilha! ⛰️🏃‍♂️`;
+    textoConfirmado += `Em breve vamos criar o grupo oficial no WhatsApp com todos os atletas para passar os últimos detalhes (entrega de kits, concentração, etc). Nos vemos na corrida! 🏃‍♂️💨`;
 
-    const textoPendente = `Fala ${primeiroNome}, tudo bem? Aqui é da organização da *OS D'SEMPRE TRILHA*. Vi que você iniciou sua inscrição no nosso site, mas o pagamento do PIX ainda não constou pra gente.\n\nAs vagas estão voando! Precisa de alguma ajuda com o pagamento para não ficar de fora? 🤝`;
+    const textoPendente = `Fala ${primeiroNome}, tudo bem? Aqui é da organização da *CORRIDA DE ANIVERSÁRIO OS D'SEMPRE*. Vi que você iniciou sua inscrição no nosso site, mas o pagamento do PIX ainda não constou pra gente.\n\nAs vagas estão voando! Precisa de alguma ajuda com o pagamento para não ficar de fora? 🤝`;
+    
     const mensagem = status === 'pago' ? encodeURIComponent(textoConfirmado) : encodeURIComponent(textoPendente);
     window.open(`https://wa.me/${numeroFormatado}?text=${mensagem}`, '_blank');
   };
 
+  // 🚀 PLANILHA AGORA EXPORTA A COLUNA DO CUPOM USADO
   const exportarPlanilha = () => {
-    const headers = ["Data Inscrição", "Nome Completo", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Contato de Emergência"];
+    const headers = ["Data Inscrição", "Nome Completo", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Cupom Usado", "Contato de Emergência"];
     const csvRows = adminData.map(p => {
       const dataFormatada = p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '';
       return [ 
         `"${dataFormatada}"`, `"${p.nome || ''}"`, `"${p.equipe || 'Avulso'}"`, `"${p.cpf || ''}"`, 
         `"${p.whatsapp || p.telefone || ''}"`, `"${p.status === 'pago' ? 'PAGO' : 'PENDENTE'}"`, 
-        `"${p.valor_pago || 0}"`, `"${p.emergencia_nome || ''} - ${p.emergencia_fone || p.contato_emergencia || ''}"` 
+        `"${p.valor_pago || 0}"`, `"${p.cupom_usado || 'Nenhum'}"`, `"${p.emergencia_nome || ''} - ${p.emergencia_fone || p.contato_emergencia || ''}"` 
       ].join(';'); 
     });
     const blob = new Blob(["\uFEFF" + [headers.join(';'), ...csvRows].join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -239,9 +238,16 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     link.click();
   };
 
+  // ==========================================
+  // CÁLCULOS ESTÁTICOS & TRANSAÇÕES
+  // ==========================================
   const totalPagos = adminData.filter(p => p.status === 'pago').length;
   const totalPendentes = adminData.filter(p => p.status === 'pendente').length;
   const arrecadado = adminData.filter(p => p.status === 'pago').reduce((acc, curr) => acc + Number(curr.valor_pago || 0), 0); 
+  
+  // 🚀 CONTA TRANSAÇÕES ÚNICAS (VENDAS) E CUPONS USADOS
+  const transacoesUnicas = new Set(adminData.map(p => p.payment_id)).size;
+  const totalCuponsUsados = adminData.filter(p => p.cupom_usado && p.cupom_usado.trim() !== '').length;
   
   const equipesCount = adminData.filter(p => p.status === 'pago' && p.equipe && p.equipe.trim() !== '').reduce((acc: any, p: any) => {
     const nomeEquipe = p.equipe.trim().toUpperCase();
@@ -275,7 +281,7 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
             </div>
             <div>
               <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Comando Central</h1>
-              <p className="text-yellow-400 text-[10px] font-black uppercase tracking-[0.3em] mt-1">OS D'SEMPRE TRILHA</p>
+              <p className="text-yellow-400 text-[10px] font-black uppercase tracking-[0.3em] mt-1">OS D'SEMPRE</p>
             </div>
           </div>
           <div className="flex w-full md:w-auto gap-4">
@@ -291,27 +297,32 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
           </div>
         </div>
 
-        {/* CARDS DE ESTATÍSTICAS */}
+        {/* 🚀 CARDS DE ESTATÍSTICAS ATUALIZADOS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           <div className="bg-gradient-to-br from-blue-900/90 to-blue-950/90 p-6 rounded-[2rem] border border-blue-800/50 shadow-xl group">
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/20 mb-2"><UserCheck size={20}/></div>
-            <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest">Pagos</p>
-            <h3 className="text-3xl font-black text-white">{totalPagos}</h3>
+            <div className="w-10 h-10 bg-blue-800/50 rounded-xl flex items-center justify-center text-blue-300 border border-blue-700/50 mb-2"><Users size={20}/></div>
+            <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest">Atletas Pagos</p>
+            <h3 className="text-3xl font-black text-white flex items-end gap-2">
+              {totalPagos} <span className="text-[10px] text-red-400 font-bold mb-1">({totalPendentes} pendentes)</span>
+            </h3>
           </div>
+          
           <div className="bg-gradient-to-br from-blue-900/90 to-blue-950/90 p-6 rounded-[2rem] border border-blue-800/50 shadow-xl group">
-            <div className="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center text-yellow-400 border border-yellow-500/20 mb-2"><Clock size={20}/></div>
-            <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest">Pendentes</p>
-            <h3 className="text-3xl font-black text-white">{totalPendentes}</h3>
+            <div className="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center text-yellow-400 border border-yellow-500/20 mb-2"><ShoppingCart size={20}/></div>
+            <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest">Vendas Geradas</p>
+            <h3 className="text-3xl font-black text-white">{transacoesUnicas}</h3>
           </div>
+
           <div className="bg-gradient-to-br from-blue-900/90 to-blue-950/90 p-6 rounded-[2rem] border border-blue-800/50 shadow-xl group">
             <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/20 mb-2"><DollarSign size={20}/></div>
             <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest">Receita Bruta</p>
             <h3 className="text-3xl font-black text-emerald-400">{formatarMoeda(arrecadado)}</h3>
           </div>
-          <div className="bg-gradient-to-br from-blue-900/90 to-blue-950/90 p-6 rounded-[2rem] border border-blue-800/50 shadow-xl">
-            <div className="w-10 h-10 bg-blue-800/50 rounded-xl flex items-center justify-center text-blue-300 border border-blue-700/50 mb-2"><Users size={20}/></div>
-            <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest">Registros</p>
-            <h3 className="text-3xl font-black text-white">{adminData.length}</h3>
+          
+          <div className="bg-gradient-to-br from-blue-900/90 to-blue-950/90 p-6 rounded-[2rem] border border-blue-800/50 shadow-xl group">
+            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/20 mb-2"><Ticket size={20}/></div>
+            <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest">Cupons Usados</p>
+            <h3 className="text-3xl font-black text-white">{totalCuponsUsados}</h3>
           </div>
         </div>
 
@@ -380,8 +391,15 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                   <tr key={i} className="hover:bg-blue-900/20 transition-all duration-300 group">
                     <td className="p-6">
                       <div className="font-black text-white text-base tracking-tight mb-1 group-hover:text-yellow-400 transition-colors">{p.nome || 'N/A'}</div>
-                      <div className="flex flex-col gap-2 items-start">
+                      <div className="flex flex-wrap gap-2 items-center mt-2">
                         <span className="text-[10px] bg-blue-900/50 text-blue-200 px-2 py-1 rounded uppercase font-bold border border-blue-800">{p.equipe ? `Equipe: ${p.equipe}` : 'Avulso'}</span>
+                        
+                        {/* 🚀 AQUI APARECE QUAL CUPOM O ATLETA USOU */}
+                        {p.cupom_usado && p.cupom_usado.trim() !== '' && (
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded uppercase font-bold border border-emerald-500/30 flex items-center gap-1">
+                            <Ticket size={12}/> Cupom: {p.cupom_usado}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="p-6">
