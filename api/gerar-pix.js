@@ -5,7 +5,6 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANO
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
-  // === REGRAS DE CORS ===
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -20,21 +19,14 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Erro de Servidor', details: 'Token do MP ausente' });
   }
 
-  // 🚀 ATUALIZADO: Recebendo também o contatoEmergencia
-  const { participantes, valorTotal, emailPrincipal, contatoEmergencia } = req.body;
+  const { participantes, valorTotal, emailPrincipal } = req.body;
 
   try {
     const cpfTitular = participantes[0].cpf.replace(/\D/g, '');
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
-    
-    // 🚀 ATUALIZADO: Webhook apontando para o seu domínio novo
     const webhookUrl = 'https://aniversario-osdsempre.vercel.app/api/webhook';
-
-    // === VALOR CORRETO ===
-    // O valorTotal já vem do Front-end com a taxa e os descontos de cupom aplicados.
     const valorComComissao = Number(valorTotal);
 
-    // === 1. PRIMEIRO: GERAMOS O PIX ===
     const payerName = participantes[0].name.trim().split(" ");
     const firstName = payerName[0];
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
@@ -69,11 +61,9 @@ export default async function handler(req, res) {
     }
 
     const idDoPagamento = mpData.id.toString();
-    
-    // Captura o cupom que vem lá da tela do front-end
     const cupomAplicado = participantes[0].cupom_aplicado || null;
 
-    // === 2. SEGUNDO: SALVAMOS NO BANCO ===
+    // === 🚀 DADOS LIMPOS, SEM EMERGÊNCIA ===
     const dadosParaSalvar = participantes.map((p, index) => {
       const cpfLimpo = p.cpf ? p.cpf.replace(/\D/g, '') : null;
 
@@ -86,14 +76,11 @@ export default async function handler(req, res) {
         cpf: cpfLimpo,
         email: index === 0 ? emailPrincipal : (p.email || emailPrincipal),
         valor_pago: index === 0 ? Number(valorTotal) : 0,
-        cupom_usado: cupomAplicado, // Registramos se ele usou desconto!
-        emergencia_nome: contatoEmergencia || 'Não informado',
-        emergencia_fone: '00000000000',
-        tamanho_camisa: p.tamanho_camisa || 'M' // 🚀 AQUI SALVAMOS O TAMANHO DA CAMISA!
+        cupom_usado: cupomAplicado,
+        tamanho_camisa: p.tamanho_camisa || 'M' 
       };
     });
 
-    // O .select() no final é mágico: ele salva e já devolve as linhas com os IDs gerados
     const { data: inscricoesSalvas, error: erroInsert } = await supabase
       .from('inscricoes')
       .insert(dadosParaSalvar)
@@ -104,13 +91,9 @@ export default async function handler(req, res) {
       throw new Error(`Erro do Banco de Dados: ${erroInsert.message}`);
     }
 
-    // === 3. TERCEIRO: GERAMOS O NÚMERO DE PEITO ÚNICO ===
     if (inscricoesSalvas && inscricoesSalvas.length > 0) {
       for (const inscricao of inscricoesSalvas) {
-        // Ex: Se o ID no banco for 15, o número de peito será 1015
         const numeroPeitoUnico = inscricao.id + 1000;
-        
-        // Atualiza a linha no banco colocando o número de peito
         await supabase
           .from('inscricoes')
           .update({ numero_peito: numeroPeitoUnico })
@@ -118,7 +101,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // === 4. DEVOLVEMOS O QR CODE PARA A TELA ===
     res.status(200).json(mpData);
 
   } catch (error) {

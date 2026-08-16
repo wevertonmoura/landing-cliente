@@ -219,15 +219,15 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     window.open(`https://wa.me/${numeroFormatado}?text=${mensagem}`, '_blank');
   };
 
-  // 🚀 PLANILHA ATUALIZADA: Agora com "Tamanho Camisa" na exportação!
+  // 🚀 PLANILHA ATUALIZADA: Sem a coluna de contato de emergência!
   const exportarPlanilha = () => {
-    const headers = ["Data Inscrição", "Nº Peito", "Nome Completo", "Tamanho Camisa", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Cupom Usado", "Contato de Emergência"];
+    const headers = ["Data Inscrição", "Nº Peito", "Nome Completo", "Tamanho Camisa", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Cupom Usado"];
     const csvRows = adminData.map(p => {
       const dataFormatada = p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '';
       return [ 
         `"${dataFormatada}"`, `"${p.numero_peito || 'N/A'}"`, `"${p.nome || ''}"`, `"${p.tamanho_camisa || 'N/A'}"`, `"${p.equipe || 'Avulso'}"`, `"${p.cpf || ''}"`, 
         `"${p.whatsapp || p.telefone || ''}"`, `"${p.status === 'pago' ? 'PAGO' : 'PENDENTE'}"`, 
-        `"${p.valor_pago || 0}"`, `"${p.cupom_usado || 'Nenhum'}"`, `"${p.emergencia_nome || ''} - ${p.emergencia_fone || p.contato_emergencia || ''}"` 
+        `"${p.valor_pago || 0}"`, `"${p.cupom_usado || 'Nenhum'}"`
       ].join(';'); 
     });
     const blob = new Blob(["\uFEFF" + [headers.join(';'), ...csvRows].join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -398,7 +398,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                       <div className="flex flex-wrap gap-2 items-center mt-2">
                         <span className="text-[10px] bg-blue-900/50 text-blue-200 px-2 py-1 rounded uppercase font-bold border border-blue-800">{p.equipe ? `Equipe: ${p.equipe}` : 'Avulso'}</span>
                         
-                        {/* 🚀 AQUI ESTÁ A NOVIDADE: ETIQUETA ROXA COM O TAMANHO DA CAMISA */}
                         <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-1 rounded uppercase font-bold border border-purple-500/30 flex items-center gap-1">
                           <Shirt size={12}/> Camisa: {p.tamanho_camisa || 'N/A'}
                         </span>
@@ -411,10 +410,8 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                       </div>
                     </td>
                     <td className="p-6">
+                      {/* 🚀 TABELA LIMPA: Exibindo apenas o WhatsApp */}
                       <div className="font-bold text-blue-100 mb-1">{p.whatsapp || p.telefone || 'N/A'}</div>
-                      <div className="text-[10px] text-blue-300 uppercase font-bold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span> SOS: <span className="text-blue-200">{p.emergencia_nome}</span>
-                      </div>
                     </td>
                     <td className="p-6 text-right">
                       <div className="flex items-center justify-end gap-3">
