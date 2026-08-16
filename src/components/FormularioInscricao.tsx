@@ -24,12 +24,10 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
 }) => {
   const [tipoSelecionado, setTipoSelecionado] = useState<'individual' | 'equipe'>('individual');
   
-  // Estados para gerenciar a validação do Cupom na tela
   const [cupomInput, setCupomInput] = useState('');
   const [validandoCupom, setValidandoCupom] = useState(false);
   const [cupomMsg, setCupomMsg] = useState<{texto: string, tipo: 'sucesso'|'erro'} | null>(null);
 
-  // Função que bate na API unificada para checar o cupom
   const validarCupom = async () => {
     if (!cupomInput) return;
     setValidandoCupom(true);
@@ -44,7 +42,6 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
       
       if (res.ok && data.valido) {
         setCupomMsg({ texto: `Cupom de ${data.desconto_percentual}% aplicado!`, tipo: 'sucesso' });
-        // Salvamos o desconto nos dados do Titular para enviar ao backend depois
         updateParticipant(0, 'cupom_aplicado', cupomInput);
         updateParticipant(0, 'cupom_desconto', data.desconto_percentual.toString());
       } else {
@@ -53,7 +50,7 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
         updateParticipant(0, 'cupom_desconto', '0');
       }
     } catch (err) {
-      setCupomMsg({ texto: 'Erro ao validar cupom. Verifique a conexão.', tipo: 'erro' });
+      setCupomMsg({ texto: 'Erro ao validar cupom.', tipo: 'erro' });
     }
     setValidandoCupom(false);
   };
@@ -65,12 +62,8 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
     setCupomMsg(null);
   };
 
-  // Cálculos matemáticos para exibição do botão final
   const descontoPercentual = Number(participants[0]?.cupom_desconto || 0);
-  
-  // Taxa agora é R$ 5,00 fixa para a compra inteira (igual no App.tsx)
   const taxaSite = 5; 
-  
   const valorComDesconto = valorTotal - (valorTotal * (descontoPercentual / 100));
   const valorFinal = valorComDesconto + taxaSite;
 
@@ -80,14 +73,12 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
         <h2 className="text-4xl font-black uppercase italic tracking-tighter text-white drop-shadow-lg">
           Inscrição
         </h2>
-        {/* 🚀 TEXTO DO 1º LOTE ATUALIZADO */}
         <p className="text-yellow-400 font-bold text-sm tracking-widest mt-2 uppercase">
           1º Lote: R$ 70 Individual | R$ 65 (Equipes +10)
         </p>
       </div>
 
-      {/* Botões de Seleção (Individual / Equipe) */}
-      <div className="flex gap-2 mb-8 bg-blue-900/20 p-1.5 rounded-xl border border-blue-800/40">
+      <div className="flex flex-col sm:flex-row gap-2 mb-8 bg-blue-900/20 p-1.5 rounded-xl border border-blue-800/40">
         <button type="button" onClick={() => setTipoSelecionado('individual')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${tipoSelecionado === 'individual' ? 'bg-yellow-400 text-[#020412] shadow-md' : 'text-blue-300 hover:text-white hover:bg-blue-800/30'}`}>
           <User size={16} /> Individual
         </button>
@@ -103,7 +94,7 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
 
             <div className="flex justify-between items-center mb-4 pl-2 border-b border-blue-800/50 pb-2">
               <h3 className={`text-[10px] font-black uppercase tracking-widest ${index === 0 ? 'text-yellow-400' : 'text-blue-300'}`}>
-                {index === 0 ? "👤 Titular da Inscrição (Responsável)" : `👥 Atleta ${index + 1}`}
+                {index === 0 ? "👤 Titular da Inscrição" : `👥 Atleta ${index + 1}`}
               </h3>
               {index > 0 && (
                 <button type="button" onClick={() => removeParticipant(index)} className="text-blue-400 hover:text-red-500 transition-colors p-1" title="Remover Atleta">
@@ -112,34 +103,31 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
               )}
             </div>
 
-            <div className="grid grid-cols-1 gap-5">
+            {/* 🚀 FORMULÁRIO RESPONSIVO: TUDO EMPILHADO (SPACE-Y-5) */}
+            <div className="space-y-5">
               
-              {/* 🚀 GRID DE NOME E TAMANHO DA CAMISA */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-[10px] font-black uppercase text-blue-300 ml-1">Nome Completo</label>
-                  <input type="text" required value={participant.name} onChange={e => updateParticipant(index, 'name', e.target.value)} className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white placeholder-blue-900 transition-all shadow-sm" placeholder="Ex: João Silva" />
-                </div>
-                
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-emerald-400 ml-1">Tamanho da Camisa</label>
-                  <select 
-                    required 
-                    value={participant.tamanho_camisa || ''} 
-                    onChange={e => updateParticipant(index, 'tamanho_camisa', e.target.value)} 
-                    className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white transition-all shadow-sm appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Escolha...</option>
-                    <option value="PP">Tamanho PP</option>
-                    <option value="P">Tamanho P</option>
-                    <option value="M">Tamanho M</option>
-                    <option value="G">Tamanho G</option>
-                    <option value="GG">Tamanho GG</option>
-                  </select>
-                </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-blue-300 ml-1">Nome Completo</label>
+                <input type="text" required value={participant.name} onChange={e => updateParticipant(index, 'name', e.target.value)} className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white placeholder-blue-900 transition-all shadow-sm" placeholder="Ex: João Silva" />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase text-emerald-400 ml-1">Tamanho da Camisa</label>
+                <select 
+                  required 
+                  value={participant.tamanho_camisa || ''} 
+                  onChange={e => updateParticipant(index, 'tamanho_camisa', e.target.value)} 
+                  className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white transition-all shadow-sm appearance-none cursor-pointer"
+                >
+                  <option value="" disabled>Escolha o tamanho...</option>
+                  <option value="PP">Tamanho PP</option>
+                  <option value="P">Tamanho P</option>
+                  <option value="M">Tamanho M</option>
+                  <option value="G">Tamanho G</option>
+                  <option value="GG">Tamanho GG</option>
+                </select>
               </div>
 
-              {/* Equipe só aparece para o titular. Os outros herdam automaticamente */}
               {index === 0 && (
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase text-blue-300 ml-1">Nome da Equipe {tipoSelecionado === 'individual' && '(Opcional)'}</label>
@@ -147,29 +135,28 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
                 </div>
               )}
 
-              {/* Distintivo para mostrar que os convidados estão na mesma equipe */}
               {index > 0 && tipoSelecionado === 'equipe' && participants[0]?.equipe && (
                 <div className="bg-blue-900/50 p-3 rounded-xl border border-blue-800/80 text-xs text-blue-200 flex items-center gap-2">
                   <Users size={14} className="text-yellow-400" />
-                  Vinculado à equipe: <strong className="text-yellow-400">{participants[0].equipe}</strong>
+                  Equipe: <strong className="text-yellow-400">{participants[0].equipe}</strong>
                 </div>
               )}
 
               {index === 0 && (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase text-blue-300 ml-1">WhatsApp</label>
-                      <input type="tel" required value={participant.phone} onChange={e => updateParticipant(index, 'phone', e.target.value)} className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white placeholder-blue-900 transition-all shadow-sm" placeholder="(81) 99999-9999" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase text-blue-300 ml-1">CPF (Necessário para a compra)</label>
-                      <input type="text" required value={participant.cpf} onChange={e => updateParticipant(index, 'cpf', e.target.value)} className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white placeholder-blue-900 transition-all shadow-sm" placeholder="000.000.000-00" />
-                    </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-blue-300 ml-1">WhatsApp</label>
+                    <input type="tel" required value={participant.phone} onChange={e => updateParticipant(index, 'phone', e.target.value)} className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white placeholder-blue-900 transition-all shadow-sm" placeholder="(81) 99999-9999" />
                   </div>
+                  
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-blue-300 ml-1">CPF (Necessário para a compra)</label>
+                    <input type="text" required value={participant.cpf} onChange={e => updateParticipant(index, 'cpf', e.target.value)} className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white placeholder-blue-900 transition-all shadow-sm" placeholder="000.000.000-00" />
+                  </div>
+                  
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase text-blue-300 ml-1">E-mail</label>
-                    <input type="email" value={participant.email} onChange={e => updateParticipant(index, 'email', e.target.value)} className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white placeholder-blue-900 transition-all shadow-sm" placeholder="seu@gmail.com" />
+                    <input type="email" value={participant.email} onChange={e => updateParticipant(index, 'email', e.target.value)} className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white placeholder-blue-900 transition-all shadow-sm" placeholder="seu@email.com" />
                   </div>
                 </>
               )}
@@ -189,27 +176,26 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
           </div>
         )}
 
-        {/* ÁREA DO CUPOM DE DESCONTO */}
         <div className="bg-blue-900/20 p-6 rounded-3xl border border-blue-800/50 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
           <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-4 flex items-center gap-2">
-            <Tag size={16} /> Tem um cupom de desconto?
+            <Tag size={16} /> Tem um cupom?
           </h3>
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col gap-3">
             <input 
               type="text" 
               value={cupomInput} 
               onChange={e => setCupomInput(e.target.value.toUpperCase().replace(/\s+/g, ''))} 
               placeholder="Digite o código" 
               disabled={validandoCupom || descontoPercentual > 0}
-              className="flex-1 bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-emerald-400 outline-none font-bold text-sm text-white placeholder-blue-900 uppercase transition-all disabled:opacity-50"
+              className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-emerald-400 outline-none font-bold text-sm text-white placeholder-blue-900 uppercase transition-all disabled:opacity-50"
             />
             {descontoPercentual > 0 ? (
-              <button type="button" onClick={removerCupom} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest border border-red-500/30 transition-all">
+              <button type="button" onClick={removerCupom} className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest border border-red-500/30 transition-all">
                  Remover
               </button>
             ) : (
-              <button type="button" onClick={validarCupom} disabled={!cupomInput || validandoCupom} className="bg-emerald-500 hover:bg-emerald-600 text-[#020412] px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50 flex items-center justify-center">
+              <button type="button" onClick={validarCupom} disabled={!cupomInput || validandoCupom} className="w-full bg-emerald-500 hover:bg-emerald-600 text-[#020412] px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50 flex items-center justify-center">
                 {validandoCupom ? <Loader2 size={16} className="animate-spin" /> : 'Aplicar'}
               </button>
             )}

@@ -70,8 +70,12 @@ export default async function handler(req, res) {
             } else {
               console.log("🚀 Banco de dados atualizado com SUCESSO!");
               
-              // 3. Disparar E-mail de Confirmação (ATUALIZADO PARA A CORRIDA)
-              const nomesParticipantes = inscricoes.map(p => `<li>🎟️ <strong>${p.nome}</strong> (Peito: ${p.numero_peito || 'A definir'})</li>`).join('');
+              // 3. Disparar E-mail de Confirmação com Número de Peito e Tamanho da Camisa
+              const nomesParticipantes = inscricoes.map(p => `
+                <li style="margin-bottom: 8px; padding: 10px; background-color: #e5e7eb; border-radius: 6px;">
+                  🎟️ <strong>${p.nome}</strong> <br/>
+                  <span style="font-size: 13px; color: #4b5563;">👕 Camisa: <strong>${p.tamanho_camisa || 'N/A'}</strong> | 🔢 Peito: <strong>#${p.numero_peito || 'A definir'}</strong></span>
+                </li>`).join('');
 
               const mailOptions = {
                 from: `"OS D'SEMPRE" <${process.env.EMAIL_USER}>`, 
@@ -85,6 +89,7 @@ export default async function handler(req, res) {
                     <div style="padding: 30px; background-color: #fafafa; color: #374151;">
                       <p style="font-size: 16px;">Olá! Seu PIX foi aprovado com sucesso e sua vaga está garantida na <strong>Corrida de Aniversário OS D'SEMPRE</strong>.</p>
                       <p style="font-size: 16px;">Aqui estão os atletas confirmados nesta inscrição:</p>
+                      
                       <ul style="font-size: 16px; list-style-type: none; padding: 0;">
                         ${nomesParticipantes}
                       </ul>
@@ -96,8 +101,17 @@ export default async function handler(req, res) {
                         <p style="margin: 5px 0;">📍 <strong>Local:</strong> Terminal da UR-11</p>
                       </div>
 
-                      <p style="margin-top: 25px; font-size: 14px;">Qualquer dúvida, entre em contato via WhatsApp com a organização.</p>
-                      <p>Prepare a energia e o sorriso! Nos vemos na corrida! 🏃‍♂️💨<br><strong>Equipe OS D'SEMPRE</strong></p>
+                      <!-- 🚀 SEÇÃO DO WHATSAPP AQUI -->
+                      <div style="background-color: #eff6ff; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center; border: 1px solid #bfdbfe;">
+                        <p style="margin: 0; font-size: 15px; color: #1e3a8a;">
+                          Qualquer dúvida, chame no WhatsApp: <br/>
+                          <a href="https://wa.me/5581988348592" style="font-size: 18px; font-weight: bold; color: #25D366; text-decoration: none; display: inline-block; margin-top: 5px;">
+                            📱 (81) 98834-8592
+                          </a>
+                        </p>
+                      </div>
+
+                      <p style="margin-top: 25px; text-align: center;">Prepare a energia e o sorriso! Nos vemos na corrida! 🏃‍♂️💨<br><strong>Equipe OS D'SEMPRE</strong></p>
                     </div>
                   </div>
                 `
