@@ -14,18 +14,29 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).send('Método inválido');
   
-  const { senha, id } = req.body;
+  // Recebendo os dados enviados pelo botão "Salvar Alterações" do painel
+  const { senha, id, nome, numero_peito, tamanho_camisa, equipe, whatsapp } = req.body;
   const senhaCorreta = process.env.VITE_SENHA_ADMIN || '85113257@we';
 
   if (senha !== senhaCorreta) {
     return res.status(401).json({ error: 'Acesso negado' });
   }
 
-  // Deletando o ID diretamente da tabela nova 'inscricoes'
-  const { error } = await supabase.from('inscricoes').delete().eq('id', id);
+  // Atualizando os dados do atleta diretamente na tabela 'inscricoes'
+  const { error } = await supabase
+    .from('inscricoes')
+    .update({ 
+      nome: nome, 
+      numero_peito: numero_peito ? Number(numero_peito) : null, 
+      tamanho_camisa: tamanho_camisa, 
+      equipe: equipe, 
+      telefone: whatsapp, 
+      whatsapp: whatsapp 
+    })
+    .eq('id', id);
   
   if (error) {
-    console.error("Erro ao deletar:", error);
+    console.error("Erro ao editar:", error);
     return res.status(400).json({ error: error.message });
   }
   
