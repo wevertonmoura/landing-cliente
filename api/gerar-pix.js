@@ -20,7 +20,8 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Erro de Servidor', details: 'Token do MP ausente' });
   }
 
-  const { participantes, valorTotal, emailPrincipal } = req.body;
+  // 🚀 ATUALIZADO: Recebendo também o contatoEmergencia
+  const { participantes, valorTotal, emailPrincipal, contatoEmergencia } = req.body;
 
   try {
     const cpfTitular = participantes[0].cpf.replace(/\D/g, '');
@@ -85,7 +86,10 @@ export default async function handler(req, res) {
         cpf: cpfLimpo,
         email: index === 0 ? emailPrincipal : (p.email || emailPrincipal),
         valor_pago: index === 0 ? Number(valorTotal) : 0,
-        cupom_usado: cupomAplicado // Registramos se ele usou desconto!
+        cupom_usado: cupomAplicado, // Registramos se ele usou desconto!
+        emergencia_nome: contatoEmergencia || 'Não informado',
+        emergencia_fone: '00000000000',
+        tamanho_camisa: p.tamanho_camisa || 'M' // 🚀 AQUI SALVAMOS O TAMANHO DA CAMISA!
       };
     });
 

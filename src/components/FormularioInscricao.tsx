@@ -68,7 +68,7 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
   // Cálculos matemáticos para exibição do botão final
   const descontoPercentual = Number(participants[0]?.cupom_desconto || 0);
   
-  // 🚀 CORREÇÃO: Taxa agora é R$ 5,00 fixa para a compra inteira (igual no App.tsx)
+  // Taxa agora é R$ 5,00 fixa para a compra inteira (igual no App.tsx)
   const taxaSite = 5; 
   
   const valorComDesconto = valorTotal - (valorTotal * (descontoPercentual / 100));
@@ -80,8 +80,9 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
         <h2 className="text-4xl font-black uppercase italic tracking-tighter text-white drop-shadow-lg">
           Inscrição
         </h2>
+        {/* 🚀 TEXTO DO 1º LOTE ATUALIZADO */}
         <p className="text-yellow-400 font-bold text-sm tracking-widest mt-2 uppercase">
-          R$ 50 Individual | R$ 45 (Equipes +10)
+          1º Lote: R$ 70 Individual | R$ 65 (Equipes +10)
         </p>
       </div>
 
@@ -112,9 +113,30 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
             </div>
 
             <div className="grid grid-cols-1 gap-5">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-blue-300 ml-1">Nome Completo</label>
-                <input type="text" required value={participant.name} onChange={e => updateParticipant(index, 'name', e.target.value)} className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white placeholder-blue-900 transition-all shadow-sm" placeholder="Ex: João Silva" />
+              
+              {/* 🚀 GRID DE NOME E TAMANHO DA CAMISA */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-[10px] font-black uppercase text-blue-300 ml-1">Nome Completo</label>
+                  <input type="text" required value={participant.name} onChange={e => updateParticipant(index, 'name', e.target.value)} className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white placeholder-blue-900 transition-all shadow-sm" placeholder="Ex: João Silva" />
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-emerald-400 ml-1">Tamanho da Camisa</label>
+                  <select 
+                    required 
+                    value={participant.tamanho_camisa || ''} 
+                    onChange={e => updateParticipant(index, 'tamanho_camisa', e.target.value)} 
+                    className="w-full bg-[#020412] border border-blue-800/80 rounded-xl px-4 py-3 focus:border-yellow-400 outline-none font-bold text-sm text-white transition-all shadow-sm appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled>Escolha...</option>
+                    <option value="PP">Tamanho PP</option>
+                    <option value="P">Tamanho P</option>
+                    <option value="M">Tamanho M</option>
+                    <option value="G">Tamanho G</option>
+                    <option value="GG">Tamanho GG</option>
+                  </select>
+                </div>
               </div>
 
               {/* Equipe só aparece para o titular. Os outros herdam automaticamente */}

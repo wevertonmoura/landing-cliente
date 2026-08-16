@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, X, ChevronRight, Hourglass, CheckCircle } from 'lucide-react';
+import { Loader2, X, ChevronRight, Hourglass, CheckCircle, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // IMPORTAÇÕES DOS COMPONENTES
@@ -31,35 +31,26 @@ const OsDSempreTrilha = () => {
   const [listaEsperaFone, setListaEsperaFone] = useState('');
   const [entrouLista, setEntrouLista] = useState(false);
 
-  // 🚀 CORREÇÃO DO TYPESCRIPT AQUI: Adicionado <any[]> e os campos do cupom
+  // 🚀 ADICIONADO "tamanho_camisa" NO ESTADO INICIAL PARA NÃO DAR ERRO
   const [participants, setParticipants] = useState<any[]>([
-    { name: '', email: '', phone: '', cpf: '', emergencyName: '', emergencyPhone: '', equipe: '', cupom_aplicado: '', cupom_desconto: '0' }
+    { name: '', email: '', phone: '', cpf: '', emergencyName: '', emergencyPhone: '', equipe: '', cupom_aplicado: '', cupom_desconto: '0', tamanho_camisa: '' }
   ]);
 
   // ==========================================
-  // MATEMÁTICA FINANCEIRA ATUALIZADA (1º LOTE)
+  // 🚀 MATEMÁTICA FINANCEIRA ATUALIZADA (1º LOTE)
   // ==========================================
   const calcularValorBase = (qtd: number) => {
-    // Se a equipe tiver 10 ou mais atletas, cobra R$ 45 por pessoa. Senão, R$ 50.
+    // Equipes com 10+ atletas = R$ 65,00. Avulsos/Menores = R$ 70,00.
     if (qtd >= 10) {
-      return qtd * 45;
+      return qtd * 65;
     }
-    return qtd * 50;
+    return qtd * 70;
   };
 
-  // 1. Calcula o valor base dos ingressos puros
   const valorBase = calcularValorBase(participants.length);
-  
-  // 2. Verifica se o titular tem um cupom aplicado (vem do FormularioInscricao)
   const descontoCupom = Number(participants[0]?.cupom_desconto || 0);
-  
-  // 3. 🚀 CORREÇÃO: A taxa do site agora é R$ 5,00 FIXO por compra, e não por pessoa
   const taxaSite = 5;
-  
-  // 4. Aplica o desconto em cima do valor base (antes da taxa)
   const valorComDesconto = valorBase - (valorBase * (descontoCupom / 100));
-  
-  // 5. O Valor final absoluto que será cobrado no PIX
   const valorFinalPix = valorComDesconto + taxaSite;
   // ==========================================
 
@@ -68,9 +59,7 @@ const OsDSempreTrilha = () => {
   const [copiado, setCopiado] = useState(false);
   const [tempoRestante, setTempoRestante] = useState(900); 
 
-  // As imagens foram mantidas por enquanto, mas lembre-se que removemos a galeria do EventInfo. 
-  // O HeroSection ainda precisa delas!
-  const images = ["/foto1.jpg", "/foto2.jpg", "/foto3.jpg", "/foto4.jpg"];
+  const images = ["/foto1.jpg", "/foto2.png", "/foto3.png", "/foto4.png"];
 
   useEffect(() => {
     const fetchVagas = async () => {
@@ -147,13 +136,12 @@ const OsDSempreTrilha = () => {
     setParticipants(newParticipants);
   };
 
-  // 🚀 CORREÇÃO DO TYPESCRIPT AQUI: O novo atleta também nasce com as propriedades do cupom
   const addParticipant = () => {
     if (vagasOcupadas + participants.length >= LIMITE_VAGAS) {
       alert("Atenção: Vagas insuficientes para adicionar outro atleta!");
       return;
     }
-    setParticipants([...participants, { name: '', email: '', phone: '', cpf: '', emergencyName: '', emergencyPhone: '', equipe: '', cupom_aplicado: '', cupom_desconto: '0' }]);
+    setParticipants([...participants, { name: '', email: '', phone: '', cpf: '', emergencyName: '', emergencyPhone: '', equipe: '', cupom_aplicado: '', cupom_desconto: '0', tamanho_camisa: '' }]);
   };
 
   const updateParticipant = (index: number, field: string, value: string) => {
@@ -198,12 +186,17 @@ const OsDSempreTrilha = () => {
       const p = participants[i];
       if (p.name.trim().length < 3) { setErrorMsg(i === 0 ? `Preencha o nome do Titular.` : `Preencha o nome do Atleta ${i + 1}.`); return; }
       
+      // 🚀 VALIDAÇÃO DO TAMANHO DA CAMISA
+      if (!p.tamanho_camisa || p.tamanho_camisa === '') {
+        setErrorMsg(i === 0 ? `Titular: Escolha o tamanho da camisa.` : `Atleta ${i + 1}: Escolha o tamanho da camisa.`);
+        return;
+      }
+
       if (i === 0) {
         if (p.phone.replace(/\D/g, '').length < 10) { setErrorMsg(`WhatsApp incompleto no Titular.`); return; }
         if (!validarCPF(p.cpf)) { setErrorMsg(`⚠️ CPF Inválido! Verifique o número digitado pelo Titular.`); return; }
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(p.email)) { setErrorMsg("Digite um e-mail válido."); return; }
-        // 🚀 REMOVIDA A VALIDAÇÃO DO CONTATO DE EMERGÊNCIA AQUI
       }
     }
     
@@ -221,9 +214,9 @@ const OsDSempreTrilha = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           participantes: participants,
-          valorTotal: valorFinalPix, // ENVIANDO O VALOR FINAL JÁ CALCULADO PARA A API
+          valorTotal: valorFinalPix, 
           emailPrincipal: mainEmail,
-          contatoEmergencia: 'Não informado' // 🚀 TEXTO FIXO PARA NÃO DAR ERRO NO BANCO DE DADOS
+          contatoEmergencia: 'Não informado' 
         })
       });
 
@@ -286,8 +279,53 @@ const OsDSempreTrilha = () => {
       <main className="container mx-auto px-4 md:px-6 py-12 max-w-5xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           
-          <EventInfo />
+          {/* 🚀 COLUNA ESQUERDA: INFOS DA CORRIDA E VITRINE DE PRÊMIOS */}
+          <div className="lg:col-span-2 flex flex-col gap-8">
+            <EventInfo />
 
+            {/* 🏆 NOVA SEÇÃO: VITRINE DE PRÊMIOS E EQUIPE */}
+            <section className="bg-blue-900/10 backdrop-blur-md border border-blue-800/30 rounded-[2.5rem] p-6 md:p-8 shadow-2xl">
+              <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-6 flex items-center gap-2">
+                <Trophy className="text-yellow-400" /> Kit Oficial & Estrutura
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* FOTO DA CAMISA */}
+                <div className="group overflow-hidden rounded-2xl border border-blue-800/50 relative cursor-pointer shadow-lg" onClick={() => setSelectedImg('/foto2.jpg')}>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020412] via-transparent to-transparent opacity-90 z-10"></div>
+                  <img src="/foto2.jpg" alt="Camisa Oficial" className="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute bottom-4 left-4 z-20">
+                    <p className="text-yellow-400 font-black uppercase text-sm drop-shadow-md">Camisa Oficial</p>
+                    <p className="text-blue-200 text-[10px] uppercase tracking-widest font-bold">Inclusa em todos os ingressos</p>
+                  </div>
+                </div>
+
+                {/* FOTO DA MEDALHA/TROFÉU */}
+                <div className="group overflow-hidden rounded-2xl border border-blue-800/50 relative cursor-pointer shadow-lg" onClick={() => setSelectedImg('/foto4.jpg')}>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020412] via-transparent to-transparent opacity-90 z-10"></div>
+                  <img src="/foto4.jpg" alt="Medalha e Troféu" className="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute bottom-4 left-4 z-20">
+                    <p className="text-yellow-400 font-black uppercase text-sm drop-shadow-md">Medalhas & Troféus</p>
+                    <p className="text-blue-200 text-[10px] uppercase tracking-widest font-bold">Premiação de destaque</p>
+                  </div>
+                </div>
+
+                {/* FOTO DA EQUIPE DEITADA (SPAN 2 COLUNAS) */}
+                <div className="md:col-span-2 group overflow-hidden rounded-2xl border border-blue-800/50 relative cursor-pointer shadow-lg mt-2" onClick={() => setSelectedImg('/foto3.jpg')}>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020412] via-transparent to-transparent opacity-90 z-10"></div>
+                  <img src="/foto3.jpg" alt="A Equipe OS D'SEMPRE" className="w-full h-64 object-cover object-center transform group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute bottom-4 left-4 z-20">
+                    <p className="text-yellow-400 font-black uppercase text-lg drop-shadow-md">A Organização</p>
+                    <p className="text-blue-200 text-[10px] uppercase tracking-widest font-bold">Nossa equipe pronta para te receber na pista!</p>
+                  </div>
+                </div>
+
+              </div>
+            </section>
+          </div>
+
+          {/* COLUNA DIREITA: FORMULÁRIO */}
           <div className="lg:col-span-1 mt-10 lg:mt-0">
             <section id="inscricao" className="lg:sticky lg:top-8 bg-blue-900/10 backdrop-blur-md border border-blue-800/30 rounded-[2.5rem] p-6 md:p-10 shadow-2xl">
               
@@ -349,7 +387,7 @@ const OsDSempreTrilha = () => {
                   errorMsg={errorMsg}
                   loading={loading}
                   handleSubmit={handleSubmit}
-                  valorTotal={valorBase} // O Formulário recebe o valor base para calcular a UI
+                  valorTotal={valorBase}
                   formatarMoeda={formatarMoeda}
                 />
               ) : (
@@ -363,7 +401,7 @@ const OsDSempreTrilha = () => {
                   copiarPix={copiarPix}
                   tempoRestante={tempoRestante}
                   formatarTempo={formatarTempo}
-                  valorTotal={valorFinalPix} // A Tela de PIX mostra o valor final calculado com taxas e descontos
+                  valorTotal={valorFinalPix} 
                   formatarMoeda={formatarMoeda}
                 />
               )}

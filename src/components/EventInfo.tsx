@@ -60,18 +60,18 @@ export default function EventInfo() {
           </h3>
           
           <div className="space-y-4">
-            {/* 1 LOTE */}
+            {/* 🚀 1 LOTE ATUALIZADO */}
             <div className="bg-[#020412]/50 p-5 rounded-xl border border-yellow-500/30">
               <h4 className="text-white font-black flex items-center gap-2 mb-3">🥇 1º LOTE <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded uppercase">Ativo</span></h4>
-              <p className="text-sm text-blue-200 mb-1">• Individual: <strong className="text-yellow-400 text-xl">R$ 50,00</strong> <span className="text-[10px] text-blue-300 font-bold">+ R$ 5,00 de taxa do site</span></p>
-              <p className="text-sm text-blue-200">• Equipe (10+): <strong className="text-yellow-400 text-xl">R$ 45,00</strong> <span className="text-[10px] text-blue-300 font-bold">/pessoa + R$ 5,00 de taxa do site</span></p>
+              <p className="text-sm text-blue-200 mb-1">• Individual: <strong className="text-yellow-400 text-xl">R$ 70,00</strong> <span className="text-[10px] text-blue-300 font-bold">+ R$ 5,00 de taxa do site</span></p>
+              <p className="text-sm text-blue-200">• Equipe (10+): <strong className="text-yellow-400 text-xl">R$ 65,00</strong> <span className="text-[10px] text-blue-300 font-bold">/pessoa + R$ 5,00 de taxa do site</span></p>
             </div>
 
-            {/* 2 LOTE - BLOQUEADO VISUALMENTE */}
+            {/* 🚀 2 LOTE ATUALIZADO - BLOQUEADO VISUALMENTE */}
             <div className="bg-[#020412]/20 p-5 rounded-xl border border-blue-900/30 opacity-60 grayscale">
               <h4 className="text-white font-black flex items-center gap-2 mb-3">🥈 2º LOTE <span className="text-[10px] bg-blue-900 text-blue-300 px-2 py-0.5 rounded uppercase">Em Breve</span></h4>
-              <p className="text-sm text-blue-200 mb-1">• Individual: <strong className="text-lg">R$ 55,00</strong> <span className="text-[10px] text-blue-300 font-bold">+ R$ 5,00 de taxa do site</span></p>
-              <p className="text-sm text-blue-200">• Equipe: <strong className="text-lg">R$ 50,00</strong> <span className="text-[10px] text-blue-300 font-bold">/pessoa + R$ 5,00 de taxa do site</span></p>
+              <p className="text-sm text-blue-200 mb-1">• Individual: <strong className="text-lg">R$ 80,00</strong> <span className="text-[10px] text-blue-300 font-bold">+ R$ 5,00 de taxa do site</span></p>
+              <p className="text-sm text-blue-200">• Equipe: <strong className="text-lg">R$ 75,00</strong> <span className="text-[10px] text-blue-300 font-bold">/pessoa + R$ 5,00 de taxa do site</span></p>
             </div>
           </div>
         </div>

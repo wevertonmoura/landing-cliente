@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   DollarSign, Users, ArrowLeft, Loader2, Search, 
   Check, Download, Trash2, MessageCircle,
-  Trophy, Activity, Map, Ticket, Tag, ShoppingCart
+  Trophy, Activity, Map, Ticket, Tag, ShoppingCart, Shirt
 } from 'lucide-react';
 
 // ==========================================
@@ -219,12 +219,13 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     window.open(`https://wa.me/${numeroFormatado}?text=${mensagem}`, '_blank');
   };
 
+  // 🚀 PLANILHA ATUALIZADA: Agora com "Tamanho Camisa" na exportação!
   const exportarPlanilha = () => {
-    const headers = ["Data Inscrição", "Nº Peito", "Nome Completo", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Cupom Usado", "Contato de Emergência"];
+    const headers = ["Data Inscrição", "Nº Peito", "Nome Completo", "Tamanho Camisa", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Cupom Usado", "Contato de Emergência"];
     const csvRows = adminData.map(p => {
       const dataFormatada = p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '';
       return [ 
-        `"${dataFormatada}"`, `"${p.numero_peito || 'N/A'}"`, `"${p.nome || ''}"`, `"${p.equipe || 'Avulso'}"`, `"${p.cpf || ''}"`, 
+        `"${dataFormatada}"`, `"${p.numero_peito || 'N/A'}"`, `"${p.nome || ''}"`, `"${p.tamanho_camisa || 'N/A'}"`, `"${p.equipe || 'Avulso'}"`, `"${p.cpf || ''}"`, 
         `"${p.whatsapp || p.telefone || ''}"`, `"${p.status === 'pago' ? 'PAGO' : 'PENDENTE'}"`, 
         `"${p.valor_pago || 0}"`, `"${p.cupom_usado || 'Nenhum'}"`, `"${p.emergencia_nome || ''} - ${p.emergencia_fone || p.contato_emergencia || ''}"` 
       ].join(';'); 
@@ -397,6 +398,11 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                       <div className="flex flex-wrap gap-2 items-center mt-2">
                         <span className="text-[10px] bg-blue-900/50 text-blue-200 px-2 py-1 rounded uppercase font-bold border border-blue-800">{p.equipe ? `Equipe: ${p.equipe}` : 'Avulso'}</span>
                         
+                        {/* 🚀 AQUI ESTÁ A NOVIDADE: ETIQUETA ROXA COM O TAMANHO DA CAMISA */}
+                        <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-1 rounded uppercase font-bold border border-purple-500/30 flex items-center gap-1">
+                          <Shirt size={12}/> Camisa: {p.tamanho_camisa || 'N/A'}
+                        </span>
+
                         {p.cupom_usado && p.cupom_usado.trim() !== '' && (
                           <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded uppercase font-bold border border-emerald-500/30 flex items-center gap-1">
                             <Ticket size={12}/> Cupom: {p.cupom_usado}
