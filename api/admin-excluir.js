@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Usando as chaves do seu arquivo .env
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+// 🚀 CORREÇÃO: Lendo as chaves corretamente na Vercel
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
@@ -14,29 +14,18 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).send('Método inválido');
   
-  // Recebendo os dados enviados pelo botão "Salvar Alterações" do painel
-  const { senha, id, nome, numero_peito, tamanho_camisa, equipe, whatsapp } = req.body;
+  const { senha, id } = req.body;
   const senhaCorreta = process.env.VITE_SENHA_ADMIN || '85113257@we';
 
   if (senha !== senhaCorreta) {
     return res.status(401).json({ error: 'Acesso negado' });
   }
 
-  // Atualizando os dados do atleta diretamente na tabela 'inscricoes'
-  const { error } = await supabase
-    .from('inscricoes')
-    .update({ 
-      nome: nome, 
-      numero_peito: numero_peito ? Number(numero_peito) : null, 
-      tamanho_camisa: tamanho_camisa, 
-      equipe: equipe, 
-      telefone: whatsapp, 
-      whatsapp: whatsapp 
-    })
-    .eq('id', id);
+  // Deletando o ID diretamente da tabela nova 'inscricoes'
+  const { error } = await supabase.from('inscricoes').delete().eq('id', id);
   
   if (error) {
-    console.error("Erro ao editar:", error);
+    console.error("Erro ao deletar:", error);
     return res.status(400).json({ error: error.message });
   }
   
