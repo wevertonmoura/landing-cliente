@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   DollarSign, Users, ArrowLeft, Loader2, Search, 
   Check, Download, Trash2, MessageCircle,
-  Trophy, Activity, Map, Ticket, Tag, ShoppingCart, Shirt, Edit
+  Trophy, Activity, Map, Ticket, Tag, ShoppingCart, Shirt, Edit, Calendar
 } from 'lucide-react';
 
 // ==========================================
@@ -84,7 +84,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
 
   const [modalCuponsAberto, setModalCuponsAberto] = useState(false);
   
-  // 🚀 ESTADOS DO NOVO MODAL DE EDIÇÃO
   const [editandoAtleta, setEditandoAtleta] = useState<any>(null);
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
 
@@ -122,7 +121,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     finally { setExcluindoId(null); }
   };
 
-  // 🚀 FUNÇÃO PARA SALVAR A EDIÇÃO DO ATLETA
   const salvarEdicao = async (e: React.FormEvent) => {
     e.preventDefault();
     setSalvandoEdicao(true);
@@ -143,7 +141,7 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
       
       if (res.ok) {
         setAdminData(prev => prev.map(item => item.id === editandoAtleta.id ? { ...item, ...editandoAtleta } : item));
-        setEditandoAtleta(null); // Fecha o modal
+        setEditandoAtleta(null); 
       } else {
         alert("Erro ao salvar a edição.");
       }
@@ -171,10 +169,18 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     window.open(`https://wa.me/${numeroFormatado}?text=${mensagem}`, '_blank');
   };
 
+  // 🚀 FUNÇÃO PARA FORMATAR DATA E HORA DE FORMA BONITA
+  const formatarDataHora = (dataString: string) => {
+    if (!dataString) return 'N/A';
+    const data = new Date(dataString);
+    return data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+
   const exportarPlanilha = () => {
-    const headers = ["Data Inscrição", "Nº Peito", "Nome Completo", "Tamanho Camisa", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Cupom Usado"];
+    const headers = ["Data e Hora", "Nº Peito", "Nome Completo", "Tamanho Camisa", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Cupom Usado"];
     const csvRows = adminData.map(p => {
-      const dataFormatada = p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '';
+      // Usando a nova formatação no Excel
+      const dataFormatada = formatarDataHora(p.created_at);
       return [ 
         `"${dataFormatada}"`, `"${p.numero_peito || 'N/A'}"`, `"${p.nome || ''}"`, `"${p.tamanho_camisa || 'N/A'}"`, `"${p.equipe || 'Avulso'}"`, `"${p.cpf || ''}"`, 
         `"${p.whatsapp || p.telefone || ''}"`, `"${p.status === 'pago' ? 'PAGO' : 'PENDENTE'}"`, 
@@ -223,7 +229,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
 
       {modalCuponsAberto && <ModalCupons senha={senha} onClose={() => setModalCuponsAberto(false)} />}
 
-      {/* 🚀 MODAL DE EDIÇÃO DE ATLETA */}
       {editandoAtleta && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
           <div className="bg-blue-950 border border-blue-800 p-8 rounded-[2rem] w-full max-w-md shadow-2xl relative">
@@ -354,7 +359,10 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                       <span className="text-yellow-400 mr-1">#{p.numero_peito || '---'}</span> 
                       {p.nome || 'N/A'}
                     </p>
-                    <p className="text-blue-300 text-[10px] uppercase font-bold mt-1 tracking-wider">{p.equipe || 'Avulso'}</p>
+                    {/* 🚀 DATA E HORA NAS INSCRIÇÕES RECENTES */}
+                    <p className="text-blue-300 text-[10px] uppercase font-bold mt-1 tracking-wider">
+                      {p.equipe ? `Equipe: ${p.equipe}` : 'Avulso'} • {formatarDataHora(p.created_at)}
+                    </p>
                   </div>
                   <div>
                     {p.status === 'pago' 
@@ -406,6 +414,12 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                             <Ticket size={12}/> Cupom: {p.cupom_usado}
                           </span>
                         )}
+
+                        {/* 🚀 SELO DE DATA E HORA NA TABELA */}
+                        <span className="text-[10px] bg-blue-900/50 text-blue-200 px-2 py-1 rounded uppercase font-bold border border-blue-800 flex items-center gap-1" title="Data da Inscrição">
+                          <Calendar size={12}/> {formatarDataHora(p.created_at)}
+                        </span>
+
                       </div>
                     </td>
                     <td className="p-6">
@@ -423,8 +437,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                           </div>
                         )}
                         <div className="flex gap-2 ml-2">
-                          
-                          {/* 🚀 NOVO BOTÃO DE EDITAR */}
                           <button onClick={() => setEditandoAtleta(p)} className="bg-blue-900/50 hover:bg-blue-600 hover:text-white text-blue-300 p-2 rounded-xl border border-blue-800" title="Editar Atleta">
                             <Edit size={16} />
                           </button>
