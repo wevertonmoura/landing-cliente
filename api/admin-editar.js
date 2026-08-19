@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Usando as chaves do seu arquivo .env
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+// 🚀 Lendo as chaves corretamente na Vercel
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
@@ -22,8 +22,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Acesso negado' });
   }
 
-  // 🚀 CORREÇÃO AQUI: Removemos a tentativa de salvar na coluna "whatsapp" que não existe
-  // e salvamos tudo certinho na coluna "telefone".
+  // Salvamos tudo certinho na coluna "telefone".
   const { error } = await supabase
     .from('inscricoes')
     .update({ 
