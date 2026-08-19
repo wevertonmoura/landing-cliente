@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-// 🚀 Lendo as chaves corretamente da Vercel
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -13,7 +12,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ message: 'Método não permitido' });
 
-  // 🚀 CORREÇÃO: Agora ele lê a chave do Mercado Pago, não importa o nome que esteja na Vercel!
+  // 🚀 CORREÇÃO PRINCIPAL AQUI: Aceitando o nome correto da chave!
   const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
   
   if (!tokenMP) {
@@ -30,9 +29,14 @@ export default async function handler(req, res) {
     const valorComComissao = Number(valorTotal);
 
     const payerName = participantes[0].name.trim().split(" ");
-    const firstName = payerName[0];
+    const firstName = payerName[0] || 'Atleta';
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
     
+    console.log("=== ENVIANDO PARA O MERCADO PAGO ===");
+    console.log("Valor:", valorComComissao);
+    console.log("E-mail:", emailPrincipal || participantes[0].email || 'osdsempre@contato.com');
+    console.log("CPF:", cpfTitular);
+
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
@@ -58,13 +62,14 @@ export default async function handler(req, res) {
     const mpData = await response.json();
 
     if (!mpData.id) {
-      console.error("Erro na API do Mercado Pago:", mpData);
+      console.error("❌ Erro na API do Mercado Pago:", mpData);
       return res.status(400).json({ error: 'Erro na API do Mercado Pago', details: mpData });
     }
 
     const idDoPagamento = mpData.id.toString();
     const cupomAplicado = participantes[0].cupom_aplicado || null;
 
+    // === 🚀 DADOS LIMPOS ===
     const dadosParaSalvar = participantes.map((p, index) => {
       const cpfLimpo = p.cpf ? p.cpf.replace(/\D/g, '') : null;
 

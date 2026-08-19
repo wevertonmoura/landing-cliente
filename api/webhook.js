@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
-// 🚀 CORREÇÃO 1: Forma correta de ler o Supabase na Vercel
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -22,8 +21,8 @@ export default async function handler(req, res) {
     
     if (!paymentId) return res.status(200).send('OK');
 
-    // 🚀 CORREÇÃO 2: Lendo a chave de acesso que realmente existe na Vercel
-    const tokenMP = process.env.MP_ACCESS_TOKEN;
+    // 🚀 CORREÇÃO: Agora ele lê a chave do Mercado Pago certa!
+    const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
     
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
       headers: { 'Authorization': `Bearer ${tokenMP}` }
@@ -52,7 +51,6 @@ export default async function handler(req, res) {
               .eq('payment_id', idDoPagamentoString);
 
             if (!erroUpdate) {
-              // Preparando E-mail Automático
               const nomesParticipantes = inscricoes.map(p => `
                 <li style="margin-bottom: 8px; padding: 10px; background-color: #e5e7eb; border-radius: 6px;">
                   🎟️ <strong>${p.nome}</strong> <br/>
