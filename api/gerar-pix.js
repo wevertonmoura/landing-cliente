@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
+// 🚀 Lendo as chaves corretamente da Vercel
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
@@ -12,10 +13,11 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ message: 'Método não permitido' });
 
-  const tokenMP = process.env.MP_ACCESS_TOKEN;
+  // 🚀 CORREÇÃO: Agora ele lê a chave do Mercado Pago, não importa o nome que esteja na Vercel!
+  const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
   
   if (!tokenMP) {
-    console.error("ERRO GRAVE: MP_ACCESS_TOKEN não foi encontrado na Vercel!");
+    console.error("ERRO GRAVE: Token do Mercado Pago não foi encontrado na Vercel!");
     return res.status(500).json({ error: 'Erro de Servidor', details: 'Token do MP ausente' });
   }
 
@@ -63,7 +65,6 @@ export default async function handler(req, res) {
     const idDoPagamento = mpData.id.toString();
     const cupomAplicado = participantes[0].cupom_aplicado || null;
 
-    // === 🚀 DADOS LIMPOS, SEM EMERGÊNCIA ===
     const dadosParaSalvar = participantes.map((p, index) => {
       const cpfLimpo = p.cpf ? p.cpf.replace(/\D/g, '') : null;
 
