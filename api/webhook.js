@@ -17,43 +17,40 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send('Método não permitido');
 
   try {
-    // 💡 AJUSTE DE SEGURANÇA: Captura o ID do pagamento de forma abrangente
     const paymentId = req.body?.data?.id || req.body?.id || req.query?.id || req.query['data.id'];
     const resourceType = req.body?.type || req.body?.resource;
 
-    // Se a notificação não contiver ID, apenas ignora com OK (200) para o MP parar de tentar enviar
     if (!paymentId) {
-      console.log("⚠️ Notificação recebida sem ID de pagamento.");
+      console.log("⚠️ Notificação recebida sem ID de pagamento de origem.");
       return res.status(200).send('OK');
     }
 
-    // 💡 AJUSTE DE SEGURANÇA: Se o webhook não for sobre um "payment", ignora para evitar erros no fetch
+    // Filtra para garantir que só processaremos notificações de pagamento reais
     if (resourceType && resourceType !== 'payment') {
-      console.log(`ℹ️ Ignorando notificação do tipo: ${resourceType}`);
+      console.log(`ℹ️ Notificação ignorada: Recurso do tipo "${resourceType}" não é um pagamento.`);
       return res.status(200).send('OK');
     }
 
-    console.log(`🔍 Processando pagamento ID: ${paymentId}`);
+    console.log(`🔍 Mercado Pago notificou! Consultando status do ID: ${paymentId}`);
 
-    // Consulta os detalhes reais do pagamento direto na API do Mercado Pago
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
       headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` }
     });
     
     if (!mpResponse.ok) {
         const erroTexto = await mpResponse.text();
-        console.error(`❌ Erro ao consultar Mercado Pago (Status ${mpResponse.status}):`, erroTexto);
-        // Retornamos 200 aqui para evitar que o MP fique reenviando em loop um ID inválido/antigo
+        console.error(`❌ Falha ao buscar detalhes no MP (Status ${mpResponse.status}):`, erroTexto);
         return res.status(200).send('Erro na API do MP');
     }
 
     const mpData = await mpResponse.json();
+    console.log(`📊 Status retornado pelo Mercado Pago para o ID ${paymentId}: [${mpData.status}]`);
 
     if (mpData.status === 'approved') {
       const emailPrincipal = mpData.external_reference;
       const idDoPagamentoString = paymentId.toString(); 
       
-      console.log(`✅ Pagamento APROVADO para: ${emailPrincipal}`);
+      console.log(`✅ Pagamento CONFIRMADO no Mercado Pago para: ${emailPrincipal}`);
 
       if (idDoPagamentoString) {
         // === Busca pelo payment_id na tabela do Supabase ===
@@ -63,31 +60,31 @@ export default async function handler(req, res) {
           .eq('payment_id', idDoPagamentoString);
 
         if (erroBusca) {
-          console.error("❌ Erro ao buscar inscrições no Supabase:", erroBusca.message);
+          console.error("❌ Erro ao buscar inscrições pendentes no Supabase:", erroBusca.message);
           return res.status(500).send('Erro no banco');
         }
 
         if (inscricoes && inscricoes.length > 0) {
           
-          // === Verificamos se o status ainda é 'pendente' ===
+          // Verificamos o status do primeiro participante do grupo
           if (inscricoes[0].status === 'pendente') {
             
-            console.log(`📝 Atualizando ${inscricoes.length} inscrito(s) deste pagamento para 'pago'...`);
+            console.log(`📝 Atualizando status de ${inscricoes.length} atletas para 'pago'...`);
 
-            // === Atualizamos o status de todos os atletas deste Pix para 'pago' ===
+            // === Atualiza em lote todos os atletas vinculados a este código Pix ===
             const { error: erroUpdate } = await supabase
               .from('inscricoes')
               .update({ status: 'pago' })
               .eq('payment_id', idDoPagamentoString);
 
             if (erroUpdate) {
-              console.error("❌ Erro ao atualizar status no Supabase:", erroUpdate.message);
+              console.error("❌ Erro fatal ao atualizar a coluna status no Supabase:", erroUpdate.message);
               return res.status(500).send('Erro ao atualizar status');
             }
             
-            console.log("🚀 Banco de dados atualizado com SUCESSO!");
+            console.log("🚀 Banco de dados atualizado com SUCESSO! Inscrição agora está como PAGA.");
             
-            // 3. Montar a lista de atletas confirmados para o corpo do e-mail
+            // Monta dinamicamente as linhas HTML com os dados dos atletas inscritos
             const nomesParticipantes = inscricoes.map(p => `
               <li style="margin-bottom: 8px; padding: 10px; background-color: #e5e7eb; border-radius: 6px; list-style: none;">
                 🎟️ <strong>${p.nome}</strong> <br/>
@@ -118,7 +115,6 @@ export default async function handler(req, res) {
                       <p style="margin: 5px 0;">📍 <strong>Local:</strong> Terminal da UR-11</p>
                     </div>
 
-                    <!-- 🚀 SEÇÃO DO WHATSAPP -->
                     <div style="background-color: #eff6ff; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center; border: 1px solid #bfdbfe;">
                       <p style="margin: 0; font-size: 15px; color: #1e3a8a;">
                         Qualquer dúvida, chame no WhatsApp: <br/>
@@ -139,24 +135,23 @@ export default async function handler(req, res) {
                 console.log("📧 E-mail de confirmação enviado com sucesso.");
             } catch (eMailError) {
                 console.error("⚠️ Erro ao disparar o e-mail pelo Nodemailer:", eMailError);
-                // Não travamos a execução aqui para o Mercado Pago saber que processamos o banco com sucesso
             }
 
           } else {
-              console.log("ℹ️ Esta transação já estava marcada como paga anteriormente.");
+              console.log("ℹ️ Essa transação já constava como paga no Supabase. Nenhuma ação necessária.");
           }
         } else {
-            console.log(`⚠️ Pagamento aprovado no MP, mas o ID ${idDoPagamentoString} não foi encontrado na tabela 'inscricoes'.`);
+            console.log(`⚠️ Alerta: O pagamento ID ${idDoPagamentoString} foi aprovado no MP, mas esse ID não existe na tabela 'inscricoes'.`);
         }
       }
     } else {
-        console.log(`ℹ️ Pagamento ID ${paymentId} recebido com status: ${mpData.status} (Ignorado)`);
+        console.log(`ℹ️ Pagamento ID ${paymentId} recebeu atualização de status temporária: [${mpData.status}] (Aguardando aprovação final)`);
     }
     
     return res.status(200).send('Webhook processado');
 
   } catch (error) { 
-    console.error("❌ Erro crítico no Webhook:", error); 
+    console.error("❌ Erro crítico interno no processamento do Webhook:", error); 
     return res.status(500).send('Erro interno');
   }
 }

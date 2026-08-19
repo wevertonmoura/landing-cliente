@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto'; // Nativo do Node.js, usado para criar um ID único seguro
+import crypto from 'crypto';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
@@ -24,7 +24,6 @@ export default async function handler(req, res) {
   const { participantes, valorTotal, emailPrincipal } = req.body;
 
   try {
-    // Validação básica para evitar quebras se o body vier vazio
     if (!participantes || participantes.length === 0) {
       return res.status(400).json({ error: 'Nenhum participante enviado.' });
     }
@@ -36,20 +35,27 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'CPF do titular é obrigatório.' });
     }
 
-    const webhookUrl = 'https://aniversario-osdsempre.vercel.app/api/webhook';
     const valorComComissao = Number(valorTotal);
 
     const payerName = (participantes[0].name || 'Participante Anonimo').trim().split(" ");
     const firstName = payerName[0];
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
     
-    // 💡 CORREÇÃO 1: Gerando um UUID limpo e válido para o X-Idempotency-Key
+    // 🚀 CORREÇÃO DO DOMÍNIO: O próprio servidor descobre em qual URL está rodando!
+    const host = req.headers.host;
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    
+    // Se você estiver rodando em localhost, aponte explicitamente para o novo domínio de produção da Vercel
+    const webhookUrl = host.includes('localhost')
+      ? 'https://vercel.app' 
+      : `${protocol}://${host}/api/webhook`;
+
+    console.log(`🌐 URL do Webhook enviada ao Mercado Pago: ${webhookUrl}`);
+
     const idempotencyKey = crypto.randomUUID();
 
-    console.log("🔄 Enviando requisição ao Mercado Pago...");
-
     // 1. Criando a cobrança PIX no Mercado Pago
-    const response = await fetch('https://api.mercadopago.com/v1/payments', {
+    const response = await fetch('https://mercadopago.com', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${tokenMP}`,
@@ -82,9 +88,8 @@ export default async function handler(req, res) {
     const cupomAplicado = participantes[0].cupom_aplicado || null;
 
     // 2. Preparando os dados para salvar no Supabase como PENDENTE
-    // 💡 CORREÇÃO 2: Garantindo fallback para strings vazias em vez de nulo caso o banco exija texto
     const dadosParaSalvar = participantes.map((p, index) => {
-      const cpfLimpo = p.cpf ? p.cpf.replace(/\D/g, '') : cpfTitular; // Se o dependente não tiver CPF, usa do titular temporariamente ou string padronizada
+      const cpfLimpo = p.cpf ? p.cpf.replace(/\D/g, '') : cpfTitular;
 
       return {
         payment_id: idDoPagamento, 
@@ -96,7 +101,7 @@ export default async function handler(req, res) {
         email: p.email || emailPrincipal,
         valor_pago: index === 0 ? Number(valorTotal) : 0,
         cupom_usado: cupomAplicado,
-        tamanho_camisa: p.tamanho_camisa || p.camisa || 'M' 
+        tamanho_camisa: p.tamanho_camisa || 'M' 
       };
     });
 
@@ -113,11 +118,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Erro ao salvar no Banco de Dados', details: erroInsert.message });
     }
 
-    // 4. Gerando número de peito sequencial único para cada inscrito de forma otimizada
+    // 4. Gerando número de peito sequencial único para cada inscrito em paralelo
     if (inscricoesSalvas && inscricoesSalvas.length > 0) {
-      console.log("🔢 Gerando números de peito...");
-      
-      // Criamos as atualizações em paralelo para rodar muito mais rápido
       const promisesUpdate = inscricoesSalvas.map(inscricao => {
         const numeroPeitoUnico = inscricao.id + 1000;
         return supabase
