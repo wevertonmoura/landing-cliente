@@ -79,10 +79,13 @@ export default async function handler(req, res) {
             } else {
               console.log("🚀 Banco de dados atualizado com SUCESSO!");
               
+              // 🚀 NOVO VISUAL DO E-MAIL: Lista os atletas com Nome, Camisa e Peito (Sem CPF)
               const nomesParticipantes = inscricoes.map(p => `
-                <li style="margin-bottom: 10px;">
-                  🎟️ <strong>${p.nome}</strong> <br/>
-                  <span style="font-size: 13px; color: #4b5563;">👕 Camisa: <strong>${p.tamanho_camisa || 'N/A'}</strong> | 🔢 Peito: <strong>#${p.numero_peito || 'A definir'}</strong></span>
+                <li style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e5e7eb;">
+                  🎟️ <strong>Atleta: ${p.nome || 'Nome não informado'}</strong> <br/>
+                  <span style="font-size: 14px; color: #4b5563;">
+                    👕 Camisa: <strong>${p.tamanho_camisa || 'N/A'}</strong> | 🔢 Peito: <strong>#${p.numero_peito || 'A definir'}</strong>
+                  </span>
                 </li>`).join('');
 
               const mailOptions = {
