@@ -30,14 +30,21 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Webhook Acionado! Processando pagamento ID: ${paymentId}`);
 
-    const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    // 🚀 Lendo o token blindado igual fizemos no gerar-pix
+    const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
+
+    if (!tokenMP) {
+      console.error("❌ ERRO: Token do Mercado Pago não encontrado na Vercel para o Webhook!");
+    }
 
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
       headers: { 'Authorization': `Bearer ${tokenMP}` }
     });
     
     if (!mpResponse.ok) {
-        console.error("❌ Erro ao consultar Mercado Pago");
+        // 🔍 Se der erro, vamos ler a fofoca toda para saber o motivo!
+        const detalheErro = await mpResponse.text();
+        console.error(`❌ Erro MP! Status: ${mpResponse.status}. Detalhes: ${detalheErro}`);
         return res.status(200).send('Erro na API do MP');
     }
 
