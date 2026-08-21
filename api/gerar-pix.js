@@ -34,8 +34,8 @@ export default async function handler(req, res) {
     const firstName = payerName[0] || 'Atleta';
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
     
-   // const valorCobrado = Number(valorTotal);
-   const valorCobrado = 0.50; // 🚀 TESTE: Forçando PIX de 50 centavos
+   const valorCobrado = Number(valorTotal);
+   
 
     // =====================================================================
     // GERAÇÃO DO PIX NO MERCADO PAGO
