@@ -1,9 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
-// 🚀 CORREÇÃO 2: Lendo chaves exatamente como estão no seu painel da Vercel
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+// 🚀 BUSCA DIRETA E EXATA DAS VARIÁVEIS QUE VOCÊ MANDOU
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+// ⚠️ Se o servidor não achar a chave, ele vai gritar no log antes de travar
+if (!supabaseKey) {
+  console.error("❌ ERRO GRAVE: A variável SUPABASE_ANON_KEY não foi carregada pela Vercel!");
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -28,8 +33,8 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Processando pagamento ID: ${paymentId}`);
 
-    // 🚀 Buscando chave do Mercado Pago
-    const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
+    // 🚀 BUSCA EXATA DA CHAVE DO MERCADO PAGO QUE VOCÊ MANDOU
+    const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
       headers: { 'Authorization': `Bearer ${tokenMP}` }
@@ -49,7 +54,6 @@ export default async function handler(req, res) {
       console.log(`✅ Pagamento APROVADO para: ${emailPrincipal}`);
 
       if (idDoPagamentoString) {
-        // Tabela inscricoes
         const { data: inscricoes, error: erroBusca } = await supabase
           .from('inscricoes')
           .select('*')
@@ -61,7 +65,6 @@ export default async function handler(req, res) {
             
             console.log(`📝 Atualizando ${inscricoes.length} inscritos deste pagamento...`);
 
-            // Atualiza status para 'pago'
             const { error: erroUpdate } = await supabase
               .from('inscricoes')
               .update({ status: 'pago' })
@@ -72,7 +75,6 @@ export default async function handler(req, res) {
             } else {
               console.log("🚀 Banco de dados atualizado com SUCESSO!");
               
-              // E-MAIL PERSONALIZADO DA CORRIDA
               const nomesParticipantes = inscricoes.map(p => `
                 <li style="margin-bottom: 10px;">
                   🎟️ <strong>${p.nome}</strong> <br/>
