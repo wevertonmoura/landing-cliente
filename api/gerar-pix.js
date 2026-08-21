@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// 🚀 USANDO A MESMA ESTRUTURA DE CONEXÃO ROBUSTA DO SEU PROJETO ANTIGO
+// 🚀 Lendo as chaves do Supabase corretamente
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ message: 'Método não permitido' });
 
-  // 🚀 PUXANDO A CHAVE DO MERCADO PAGO IGUAL AO SEU CÓDIGO ANTIGO
+  // 🚀 Puxando a chave do Mercado Pago
   const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
   
   if (!tokenMP) {
@@ -27,17 +27,18 @@ export default async function handler(req, res) {
     const cpfTitular = participantes[0].cpf.replace(/\D/g, '');
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
     
-    // 🚀 WEBHOOK DINÂMICO IGUAL AO SEU CÓDIGO ANTIGO
-    const webhookUrl = `https://${req.headers.host}/api/webhook`;
+    // 🚀 CORREÇÃO 1: Webhook Fixo com seu domínio oficial
+    const webhookUrl = 'https://sdsempre.vercel.app/api/webhook';
 
     const payerName = participantes[0].name.trim().split(" ");
     const firstName = payerName[0] || 'Atleta';
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
     
-    const valorCobrado = Number(valorTotal);
+    //const valorCobrado = Number(valorTotal);
+    const valorCobrado = 1.00; // 🚀 TESTE: Forçando PIX de 1 real
 
     // =====================================================================
-    // GERAÇÃO DO PIX NO MERCADO PAGO (Idêntico ao seu projeto que funciona)
+    // GERAÇÃO DO PIX NO MERCADO PAGO
     // =====================================================================
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
@@ -63,7 +64,6 @@ export default async function handler(req, res) {
 
     const mpData = await response.json();
 
-    // Se bater na política de segurança, ele avisa
     if (!mpData.id) {
       console.error("Erro MP:", mpData);
       return res.status(400).json({ error: 'Erro na API do Mercado Pago', details: mpData });
@@ -80,7 +80,7 @@ export default async function handler(req, res) {
       
       return {
         payment_id: idDoPagamento,
-        status: 'pendente', // No projeto novo usamos texto em vez de true/false
+        status: 'pendente', 
         nome: p.name || 'Sem Nome',
         equipe: p.equipe || (index > 0 ? participantes[0].equipe : null),
         telefone: index === 0 ? telefoneTitular : (p.phone ? p.phone.replace(/\D/g, '') : telefoneTitular),
@@ -92,7 +92,7 @@ export default async function handler(req, res) {
       };
     });
 
-    // Inserindo no Supabase e pedindo os dados de volta para gerar o Número de Peito
+    // Inserindo no Supabase
     const { data: inscricoesSalvas, error: erroInsert } = await supabase
       .from('inscricoes')
       .insert(dadosParaSalvar)

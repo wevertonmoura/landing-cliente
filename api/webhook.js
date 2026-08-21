@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
-// 🚀 1. CONEXÃO COM BANCO IGUAL AO QUE JÁ FUNCIONA NA TRILHA
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY
-);
+// 🚀 CORREÇÃO 2: Lendo chaves exatamente como estão no seu painel da Vercel
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Processando pagamento ID: ${paymentId}`);
 
-    // 🚀 2. BUSCANDO CHAVE DO MERCADO PAGO
+    // 🚀 Buscando chave do Mercado Pago
     const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
 
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
       console.log(`✅ Pagamento APROVADO para: ${emailPrincipal}`);
 
       if (idDoPagamentoString) {
-        // 🚀 3. MUDANÇA PARA A TABELA NOVA (inscricoes)
+        // Tabela inscricoes
         const { data: inscricoes, error: erroBusca } = await supabase
           .from('inscricoes')
           .select('*')
@@ -57,11 +57,11 @@ export default async function handler(req, res) {
 
         if (!erroBusca && inscricoes && inscricoes.length > 0) {
           
-          // 🚀 4. MUDANÇA PARA O STATUS NOVO ('pendente' para 'pago')
           if (inscricoes[0].status === 'pendente') {
             
             console.log(`📝 Atualizando ${inscricoes.length} inscritos deste pagamento...`);
 
+            // Atualiza status para 'pago'
             const { error: erroUpdate } = await supabase
               .from('inscricoes')
               .update({ status: 'pago' })
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
             } else {
               console.log("🚀 Banco de dados atualizado com SUCESSO!");
               
-              // 🚀 5. E-MAIL PERSONALIZADO DA CORRIDA
+              // E-MAIL PERSONALIZADO DA CORRIDA
               const nomesParticipantes = inscricoes.map(p => `
                 <li style="margin-bottom: 10px;">
                   🎟️ <strong>${p.nome}</strong> <br/>
