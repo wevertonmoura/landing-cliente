@@ -1,8 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Usando as suas chaves seguras do .env
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+// 🚀 BUSCA SEGURA DAS VARIÁVEIS COM FALLBACK
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+// ⚠️ Trava para avisar nos logs se a Vercel perder as chaves de novo
+if (!supabaseUrl || !supabaseKey) {
+  console.error("❌ ERRO CRÍTICO: Chaves do Supabase não encontradas no checar-vagas.js!");
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {

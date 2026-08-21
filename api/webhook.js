@@ -1,11 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
-// 🚀 BUSCA DIRETA E EXATA DAS VARIÁVEIS QUE VOCÊ MANDOU
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-// ⚠️ Se o servidor não achar a chave, ele vai gritar no log antes de travar
 if (!supabaseKey) {
   console.error("❌ ERRO GRAVE: A variável SUPABASE_ANON_KEY não foi carregada pela Vercel!");
 }
@@ -27,13 +25,11 @@ export default async function handler(req, res) {
     const paymentId = req.body?.data?.id || req.query?.id || req.query['data.id'];
     
     if (!paymentId) {
-      console.log("⚠️ Notificação recebida sem ID de pagamento.");
       return res.status(200).send('OK');
     }
 
-    console.log(`🔍 Processando pagamento ID: ${paymentId}`);
+    console.log(`🔍 Webhook Acionado! Processando pagamento ID: ${paymentId}`);
 
-    // 🚀 BUSCA EXATA DA CHAVE DO MERCADO PAGO QUE VOCÊ MANDOU
     const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
@@ -51,7 +47,7 @@ export default async function handler(req, res) {
       const emailPrincipal = mpData.external_reference;
       const idDoPagamentoString = paymentId.toString(); 
       
-      console.log(`✅ Pagamento APROVADO para: ${emailPrincipal}`);
+      console.log(`✅ MP confirmou: PIX APROVADO para: ${emailPrincipal}`);
 
       if (idDoPagamentoString) {
         const { data: inscricoes, error: erroBusca } = await supabase
@@ -61,9 +57,10 @@ export default async function handler(req, res) {
 
         if (!erroBusca && inscricoes && inscricoes.length > 0) {
           
-          if (inscricoes[0].status === 'pendente') {
+          // 🚀 CORREÇÃO AQUI: Removemos a trava do "pendente". Se não for pago, ele tratora e atualiza!
+          if (inscricoes[0].status !== 'pago') {
             
-            console.log(`📝 Atualizando ${inscricoes.length} inscritos deste pagamento...`);
+            console.log(`📝 O status atual no banco é '${inscricoes[0].status}'. Forçando atualização para 'pago'...`);
 
             const { error: erroUpdate } = await supabase
               .from('inscricoes')
@@ -103,9 +100,6 @@ export default async function handler(req, res) {
                         <p style="margin: 5px 0;">⏰ <strong>Horários:</strong> Concentração: 05h00 | Largada: 06h00</p>
                         <p style="margin: 5px 0;">📍 <strong>Local:</strong> Terminal da UR-11</p>
                       </div>
-
-                      <p style="margin-top: 25px; text-align: center; font-size: 14px;">Qualquer dúvida, chame no WhatsApp: <br><a href="https://wa.me/5581988348592" style="color: #25D366; font-weight: bold; text-decoration: none; font-size: 18px;">(81) 98834-8592</a></p>
-                      <p style="text-align: center;">Nos vemos na corrida!<br><strong>Equipe OS D'SEMPRE</strong></p>
                     </div>
                   </div>
                 `
