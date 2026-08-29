@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-// 🚀 Lendo as chaves do Supabase corretamente
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
@@ -14,7 +13,6 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ message: 'Método não permitido' });
 
-  // 🚀 Puxando a chave do Mercado Pago
   const tokenMP = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
   
   if (!tokenMP) {
@@ -27,19 +25,14 @@ export default async function handler(req, res) {
     const cpfTitular = participantes[0].cpf.replace(/\D/g, '');
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
     
-    // 🚀 CORREÇÃO 1: Webhook Fixo com seu domínio oficial
     const webhookUrl = 'https://aniversario-osdsempre.vercel.app/api/webhook';
 
     const payerName = participantes[0].name.trim().split(" ");
     const firstName = payerName[0] || 'Atleta';
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
     
-   //const valorCobrado = Number(valorTotal);
-   const valorCobrado = 0.50;
-
-    // =====================================================================
-    // GERAÇÃO DO PIX NO MERCADO PAGO
-    // =====================================================================
+    const valorCobrado = 0.50;
+//const valorCobrado = Number(valorTotal);
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
@@ -70,11 +63,10 @@ export default async function handler(req, res) {
     }
 
     const idDoPagamento = mpData.id.toString();
-    const cupomAplicado = participantes[0].cupom_aplicado || null;
+    //const cupomAplicado = participantes[0].cupom_aplicado || null;
+    // 🚀 Tenta pegar o cupom que veio aplicado, ou o que o usuário digitou direto no input
+    const cupomAplicado = participantes[0].cupom_aplicado || participantes[0].cupomInput || req.body.cupom || null;
 
-    // =====================================================================
-    // MAPEAMENTO PARA A NOVA TABELA (inscricoes)
-    // =====================================================================
     const dadosParaSalvar = participantes.map((p, index) => {
       const cpfLimpo = p.cpf ? p.cpf.replace(/\D/g, '') : null;
       
@@ -92,7 +84,6 @@ export default async function handler(req, res) {
       };
     });
 
-    // Inserindo no Supabase
     const { data: inscricoesSalvas, error: erroInsert } = await supabase
       .from('inscricoes')
       .insert(dadosParaSalvar)
@@ -102,7 +93,6 @@ export default async function handler(req, res) {
       throw new Error(`Erro do Banco de Dados: ${erroInsert.message}`);
     }
 
-    // Gerando o Número de Peito (ID + 1000)
     if (inscricoesSalvas && inscricoesSalvas.length > 0) {
       for (const inscricao of inscricoesSalvas) {
         const numeroPeitoUnico = inscricao.id + 1000;
