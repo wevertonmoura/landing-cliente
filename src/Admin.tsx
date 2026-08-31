@@ -169,7 +169,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     window.open(`https://wa.me/${numeroFormatado}?text=${mensagem}`, '_blank');
   };
 
-  // 🚀 FUNÇÃO PARA FORMATAR DATA E HORA DE FORMA BONITA
   const formatarDataHora = (dataString: string) => {
     if (!dataString) return 'N/A';
     const data = new Date(dataString);
@@ -179,7 +178,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
   const exportarPlanilha = () => {
     const headers = ["Data e Hora", "Nº Peito", "Nome Completo", "Tamanho Camisa", "Equipe", "CPF", "WhatsApp", "Status", "Valor Pago", "Cupom Usado"];
     const csvRows = adminData.map(p => {
-      // Usando a nova formatação no Excel
       const dataFormatada = formatarDataHora(p.created_at);
       return [ 
         `"${dataFormatada}"`, `"${p.numero_peito || 'N/A'}"`, `"${p.nome || ''}"`, `"${p.tamanho_camisa || 'N/A'}"`, `"${p.equipe || 'Avulso'}"`, `"${p.cpf || ''}"`, 
@@ -359,7 +357,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                       <span className="text-yellow-400 mr-1">#{p.numero_peito || '---'}</span> 
                       {p.nome || 'N/A'}
                     </p>
-                    {/* 🚀 DATA E HORA NAS INSCRIÇÕES RECENTES */}
                     <p className="text-blue-300 text-[10px] uppercase font-bold mt-1 tracking-wider">
                       {p.equipe ? `Equipe: ${p.equipe}` : 'Avulso'} • {formatarDataHora(p.created_at)}
                     </p>
@@ -409,13 +406,13 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                           <Shirt size={12}/> Camisa: {p.tamanho_camisa || 'N/A'}
                         </span>
 
+                        {/* 🚀 O NOVO VISUAL DO CUPOM: AZUL CIANO BRILHANTE! */}
                         {p.cupom_usado && p.cupom_usado.trim() !== '' && (
-                          <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded uppercase font-bold border border-emerald-500/30 flex items-center gap-1">
-                            <Ticket size={12}/> Cupom: {p.cupom_usado}
+                          <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-1 rounded uppercase font-bold border border-cyan-500/40 shadow-[0_0_10px_rgba(34,211,238,0.15)] flex items-center gap-1">
+                            <Tag size={12}/> Cupom: {p.cupom_usado}
                           </span>
                         )}
 
-                        {/* 🚀 SELO DE DATA E HORA NA TABELA */}
                         <span className="text-[10px] bg-blue-900/50 text-blue-200 px-2 py-1 rounded uppercase font-bold border border-blue-800 flex items-center gap-1" title="Data da Inscrição">
                           <Calendar size={12}/> {formatarDataHora(p.created_at)}
                         </span>

@@ -42,12 +42,20 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
       
       if (res.ok && data.valido) {
         setCupomMsg({ texto: `Cupom de ${data.desconto_percentual}% aplicado!`, tipo: 'sucesso' });
+        
+        // 🚀 CORREÇÃO: Salvamos o nome, esperamos um instante, e salvamos o desconto para o React não atropelar os dados!
         updateParticipant(0, 'cupom_aplicado', cupomInput);
-        updateParticipant(0, 'cupom_desconto', data.desconto_percentual.toString());
+        setTimeout(() => {
+            updateParticipant(0, 'cupom_desconto', data.desconto_percentual.toString());
+        }, 100);
+
       } else {
         setCupomMsg({ texto: data.error || 'Cupom inválido ou expirado.', tipo: 'erro' });
+        
         updateParticipant(0, 'cupom_aplicado', '');
-        updateParticipant(0, 'cupom_desconto', '0');
+        setTimeout(() => {
+            updateParticipant(0, 'cupom_desconto', '0');
+        }, 100);
       }
     } catch (err) {
       setCupomMsg({ texto: 'Erro ao validar cupom.', tipo: 'erro' });
@@ -57,7 +65,9 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
 
   const removerCupom = () => {
     updateParticipant(0, 'cupom_aplicado', '');
-    updateParticipant(0, 'cupom_desconto', '0');
+    setTimeout(() => {
+        updateParticipant(0, 'cupom_desconto', '0');
+    }, 100);
     setCupomInput('');
     setCupomMsg(null);
   };
@@ -103,7 +113,6 @@ const FormularioInscricao: React.FC<FormularioProps> = ({
               )}
             </div>
 
-            {/* 🚀 FORMULÁRIO RESPONSIVO: TUDO EMPILHADO (SPACE-Y-5) */}
             <div className="space-y-5">
               
               <div className="space-y-1">
