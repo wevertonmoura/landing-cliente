@@ -21,6 +21,9 @@ export default async function handler(req, res) {
 
   const { participantes, valorTotal, emailPrincipal } = req.body;
 
+  // 🔍 RASTREADOR 1: Verifica o que o formulário enviou para a Vercel
+  console.log("🔍 [RASTREADOR 1] Dados recebidos do site:", JSON.stringify(participantes[0]));
+
   try {
     const cpfTitular = participantes[0].cpf.replace(/\D/g, '');
     const telefoneTitular = participantes[0].phone.replace(/\D/g, '');
@@ -31,8 +34,9 @@ export default async function handler(req, res) {
     const firstName = payerName[0] || 'Atleta';
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
     
-    //const valorCobrado = 0.50;
-const valorCobrado = Number(valorTotal);
+    //const valorCobrado = Number(valorTotal);
+    const valorCobrado = 0.50;
+
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
@@ -63,8 +67,6 @@ const valorCobrado = Number(valorTotal);
     }
 
     const idDoPagamento = mpData.id.toString();
-    //const cupomAplicado = participantes[0].cupom_aplicado || null;
-    // 🚀 Tenta pegar o cupom que veio aplicado, ou o que o usuário digitou direto no input
     const cupomAplicado = participantes[0].cupom_aplicado || participantes[0].cupomInput || req.body.cupom || null;
 
     const dadosParaSalvar = participantes.map((p, index) => {
@@ -83,6 +85,9 @@ const valorCobrado = Number(valorTotal);
         tamanho_camisa: p.tamanho_camisa || 'M' 
       };
     });
+
+    // 🔍 RASTREADOR 2: Verifica o que a Vercel está tentando enviar para o Supabase
+    console.log("🔍 [RASTREADOR 2] Dados montados para o Supabase:", dadosParaSalvar[0]);
 
     const { data: inscricoesSalvas, error: erroInsert } = await supabase
       .from('inscricoes')
