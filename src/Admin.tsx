@@ -205,7 +205,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
   }, {});
   const rankingEquipes = Object.entries(equipesCount).map(([nome, qtde]) => ({ nome, quantidade: qtde as number })).sort((a, b) => b.quantidade - a.quantidade).slice(0, 5);
   
-  // 🚀 NOVIDADE: RANKING DOS CUPONS MAIS USADOS
   const cuponsCount = adminData.filter(p => p.status === 'pago' && p.cupom_usado && p.cupom_usado.trim() !== '').reduce((acc: any, p: any) => {
     const nomeCupom = p.cupom_usado.trim().toUpperCase();
     acc[nomeCupom] = (acc[nomeCupom] || 0) + 1;
@@ -330,7 +329,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
             <h3 className="text-3xl font-black text-emerald-400">{formatarMoeda(arrecadado)}</h3>
           </div>
 
-          {/* 🚀 O CARD DE CUPONS AGORA EXIBE O RESUMO COMPLETO */}
           <div className="bg-gradient-to-br from-blue-900/90 to-blue-950/90 p-6 rounded-[2rem] border border-blue-800/50 shadow-xl group flex flex-col">
             <div className="w-10 h-10 bg-cyan-500/10 rounded-xl flex items-center justify-center text-cyan-400 border border-cyan-500/20 mb-2"><Ticket size={20}/></div>
             <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest">Cupons Usados</p>
@@ -425,9 +423,13 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                           <Shirt size={12}/> Camisa: {p.tamanho_camisa || 'N/A'}
                         </span>
 
-                        {p.cupom_usado && p.cupom_usado.trim() !== '' && (
+                        {p.cupom_usado && p.cupom_usado.trim() !== '' ? (
                           <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-1 rounded uppercase font-bold border border-cyan-500/40 shadow-[0_0_10px_rgba(34,211,238,0.15)] flex items-center gap-1">
                             <Tag size={12}/> Cupom: {p.cupom_usado}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-zinc-800/50 text-zinc-400 px-2 py-1 rounded uppercase font-bold border border-zinc-700/50 flex items-center gap-1">
+                            <Tag size={12}/> Sem Cupom
                           </span>
                         )}
 
