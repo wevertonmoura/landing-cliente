@@ -204,6 +204,15 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     return acc;
   }, {});
   const rankingEquipes = Object.entries(equipesCount).map(([nome, qtde]) => ({ nome, quantidade: qtde as number })).sort((a, b) => b.quantidade - a.quantidade).slice(0, 5);
+  
+  // 🚀 NOVIDADE: RANKING DOS CUPONS MAIS USADOS
+  const cuponsCount = adminData.filter(p => p.status === 'pago' && p.cupom_usado && p.cupom_usado.trim() !== '').reduce((acc: any, p: any) => {
+    const nomeCupom = p.cupom_usado.trim().toUpperCase();
+    acc[nomeCupom] = (acc[nomeCupom] || 0) + 1;
+    return acc;
+  }, {});
+  const rankingCupons = Object.entries(cuponsCount).map(([nome, qtde]) => ({ nome, quantidade: qtde as number })).sort((a, b) => b.quantidade - a.quantidade);
+  
   const ultimasInscricoes = adminData.slice(0, 5);
 
   const dadosFiltrados = adminData.filter(p => 
@@ -321,10 +330,20 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
             <h3 className="text-3xl font-black text-emerald-400">{formatarMoeda(arrecadado)}</h3>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-900/90 to-blue-950/90 p-6 rounded-[2rem] border border-blue-800/50 shadow-xl group">
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/20 mb-2"><Ticket size={20}/></div>
+          {/* 🚀 O CARD DE CUPONS AGORA EXIBE O RESUMO COMPLETO */}
+          <div className="bg-gradient-to-br from-blue-900/90 to-blue-950/90 p-6 rounded-[2rem] border border-blue-800/50 shadow-xl group flex flex-col">
+            <div className="w-10 h-10 bg-cyan-500/10 rounded-xl flex items-center justify-center text-cyan-400 border border-cyan-500/20 mb-2"><Ticket size={20}/></div>
             <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest">Cupons Usados</p>
-            <h3 className="text-3xl font-black text-white">{totalCuponsUsados}</h3>
+            <h3 className="text-3xl font-black text-white mb-2">{totalCuponsUsados}</h3>
+            
+            <div className="mt-auto space-y-1.5 custom-scrollbar overflow-y-auto max-h-[80px]">
+              {rankingCupons.length > 0 ? rankingCupons.map((c, i) => (
+                <div key={i} className="flex justify-between items-center text-[10px] bg-blue-950/50 px-2 py-1.5 rounded-lg border border-blue-800/30">
+                  <span className="text-cyan-400 font-bold tracking-widest">{c.nome}</span>
+                  <span className="bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded font-black">{c.quantidade}x</span>
+                </div>
+              )) : <span className="text-[10px] text-blue-400/50 italic">Nenhum uso pago.</span>}
+            </div>
           </div>
         </div>
 
@@ -406,7 +425,6 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                           <Shirt size={12}/> Camisa: {p.tamanho_camisa || 'N/A'}
                         </span>
 
-                        {/* 🚀 O NOVO VISUAL DO CUPOM: AZUL CIANO BRILHANTE! */}
                         {p.cupom_usado && p.cupom_usado.trim() !== '' && (
                           <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-1 rounded uppercase font-bold border border-cyan-500/40 shadow-[0_0_10px_rgba(34,211,238,0.15)] flex items-center gap-1">
                             <Tag size={12}/> Cupom: {p.cupom_usado}
