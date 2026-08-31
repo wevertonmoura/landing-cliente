@@ -144,18 +144,23 @@ const OsDSempreTrilha = () => {
     setParticipants([...participants, { name: '', email: '', phone: '', cpf: '', emergencyName: '', emergencyPhone: '', equipe: '', cupom_aplicado: '', cupom_desconto: '0', tamanho_camisa: '' }]);
   };
 
+  // 🚀 A CORREÇÃO MÁGICA ESTÁ AQUI: Usando prevParticipants para evitar atropelamento de estado
   const updateParticipant = (index: number, field: string, value: string) => {
-    const newParticipants = [...participants];
-    let v = value;
-    if (field === 'phone' || field === 'emergencyPhone' || field === 'listaEsperaFone') {
-      v = v.replace(/\D/g, "").slice(0, 11); 
-      if (v.length > 2) v = `(${v.slice(0, 2)}) ${v.slice(2)}`; 
-      if (v.length > 10) v = `${v.slice(0, 10)}-${v.slice(10)}`; 
-    } else if (field === 'cpf') {
-      v = v.replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    }
-    newParticipants[index] = { ...newParticipants[index], [field]: v };
-    setParticipants(newParticipants);
+    setParticipants(prevParticipants => {
+      const newParticipants = [...prevParticipants];
+      let v = value;
+      
+      if (field === 'phone' || field === 'emergencyPhone' || field === 'listaEsperaFone') {
+        v = v.replace(/\D/g, "").slice(0, 11); 
+        if (v.length > 2) v = `(${v.slice(0, 2)}) ${v.slice(2)}`; 
+        if (v.length > 10) v = `${v.slice(0, 10)}-${v.slice(10)}`; 
+      } else if (field === 'cpf') {
+        v = v.replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+      }
+      
+      newParticipants[index] = { ...newParticipants[index], [field]: v };
+      return newParticipants;
+    });
   };
 
   const scrollToForm = (e: React.MouseEvent) => {
