@@ -34,8 +34,8 @@ export default async function handler(req, res) {
     const firstName = payerName[0] || 'Atleta';
     const lastName = payerName.length > 1 ? payerName.slice(1).join(" ") : "Participante";
     
-    const valorCobrado = Number(valorTotal);
-   // const valorCobrado = 0.50;
+    //const valorCobrado = Number(valorTotal);
+    const valorCobrado = 0.50;
 
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',

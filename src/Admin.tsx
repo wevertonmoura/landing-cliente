@@ -135,7 +135,8 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
           numero_peito: editandoAtleta.numero_peito,
           tamanho_camisa: editandoAtleta.tamanho_camisa,
           equipe: editandoAtleta.equipe,
-          whatsapp: editandoAtleta.whatsapp || editandoAtleta.telefone
+          whatsapp: editandoAtleta.whatsapp || editandoAtleta.telefone,
+          cupom_usado: editandoAtleta.cupom_usado // 🚀 ENVIANDO O CUPOM PARA A API!
         })
       });
       
@@ -143,7 +144,7 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
         setAdminData(prev => prev.map(item => item.id === editandoAtleta.id ? { ...item, ...editandoAtleta } : item));
         setEditandoAtleta(null); 
       } else {
-        alert("Erro ao salvar a edição.");
+        alert("Erro ao salvar a edição. Verifique a API admin-editar.");
       }
     } catch (err) {
       alert("Falha de conexão com o servidor.");
@@ -196,7 +197,9 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
   const totalPendentes = adminData.filter(p => p.status === 'pendente').length;
   const arrecadado = adminData.filter(p => p.status === 'pago').reduce((acc, curr) => acc + Number(curr.valor_pago || 0), 0); 
   const transacoesUnicas = new Set(adminData.map(p => p.payment_id)).size;
-  const totalCuponsUsados = adminData.filter(p => p.cupom_usado && p.cupom_usado.trim() !== '').length;
+  
+  // 🚀 CONTA APENAS CUPONS QUE FORAM PAGOS!
+  const totalCuponsUsados = adminData.filter(p => p.status === 'pago' && p.cupom_usado && p.cupom_usado.trim() !== '').length;
 
   const equipesCount = adminData.filter(p => p.status === 'pago' && p.equipe && p.equipe.trim() !== '').reduce((acc: any, p: any) => {
     const nomeEquipe = p.equipe.trim().toUpperCase();
@@ -205,6 +208,7 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
   }, {});
   const rankingEquipes = Object.entries(equipesCount).map(([nome, qtde]) => ({ nome, quantidade: qtde as number })).sort((a, b) => b.quantidade - a.quantidade).slice(0, 5);
   
+  // 🚀 RANKING DE CUPONS SÓ CONTA PAGAMENTOS CONFIRMADOS
   const cuponsCount = adminData.filter(p => p.status === 'pago' && p.cupom_usado && p.cupom_usado.trim() !== '').reduce((acc: any, p: any) => {
     const nomeCupom = p.cupom_usado.trim().toUpperCase();
     acc[nomeCupom] = (acc[nomeCupom] || 0) + 1;
@@ -218,7 +222,8 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
     (p.nome || '').toLowerCase().includes(busca.toLowerCase()) || 
     (p.whatsapp || p.telefone || '').includes(busca) || 
     (p.equipe || '').toLowerCase().includes(busca.toLowerCase()) ||
-    (p.numero_peito && p.numero_peito.toString().includes(busca))
+    (p.numero_peito && p.numero_peito.toString().includes(busca)) ||
+    (p.cupom_usado && p.cupom_usado.toLowerCase().includes(busca.toLowerCase())) // Permite buscar pelo nome do cupom!
   );
 
   if (loading) return (
@@ -264,9 +269,17 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-blue-300 ml-1">Equipe</label>
-                <input type="text" value={editandoAtleta.equipe || ''} onChange={(e) => setEditandoAtleta({...editandoAtleta, equipe: e.target.value})} className="w-full bg-blue-900/50 border border-blue-800 rounded-xl p-3 text-white font-bold focus:outline-none focus:border-yellow-400 text-sm" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-blue-300 ml-1">Equipe</label>
+                  <input type="text" value={editandoAtleta.equipe || ''} onChange={(e) => setEditandoAtleta({...editandoAtleta, equipe: e.target.value})} className="w-full bg-blue-900/50 border border-blue-800 rounded-xl p-3 text-white font-bold focus:outline-none focus:border-yellow-400 text-sm" />
+                </div>
+                
+                {/* 🚀 NOVO CAMPO DE EDIÇÃO DO CUPOM AQUI! */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-cyan-400 ml-1">Cupom Usado</label>
+                  <input type="text" value={editandoAtleta.cupom_usado || ''} onChange={(e) => setEditandoAtleta({...editandoAtleta, cupom_usado: e.target.value.toUpperCase().replace(/\s+/g, '')})} placeholder="Vazio = Sem Cupom" className="w-full bg-blue-900/50 border border-blue-800 rounded-xl p-3 text-white font-bold focus:outline-none focus:border-cyan-400 text-sm placeholder:text-blue-700/50" />
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -393,7 +406,7 @@ const Admin = ({ senha, formatarMoeda, fecharAdmin }: any) => {
           <div className="p-6 md:p-8 border-b border-blue-900/80 bg-blue-950/40 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4 w-full md:w-auto flex-1">
               <div className="bg-blue-900/50 p-3 rounded-xl border border-blue-800/50"><Search size={20} className="text-yellow-400" /></div>
-              <input type="text" placeholder="Buscar por número, nome ou equipe..." value={busca} onChange={(e) => setBusca(e.target.value)} className="bg-transparent border-none outline-none text-base md:text-lg font-bold text-white w-full placeholder:text-blue-400 focus:ring-0" />
+              <input type="text" placeholder="Buscar por número, nome, equipe ou cupom..." value={busca} onChange={(e) => setBusca(e.target.value)} className="bg-transparent border-none outline-none text-base md:text-lg font-bold text-white w-full placeholder:text-blue-400 focus:ring-0" />
             </div>
             <button onClick={exportarPlanilha} className="w-full md:w-auto bg-blue-900/50 hover:bg-blue-800 text-blue-300 px-6 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all border border-blue-800 shadow-lg">
               <Download size={18} /> Exportar
