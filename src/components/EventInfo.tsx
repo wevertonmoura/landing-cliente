@@ -42,7 +42,7 @@ export default function EventInfo() {
             <MapPin className="text-yellow-400" /> Informações
           </h3>
           <ul className="space-y-5 font-medium text-blue-100">
-            <li className="flex items-center gap-4"><Calendar className="text-blue-400" size={24}/> <div><p className="text-[10px] uppercase tracking-widest text-blue-300 font-bold">Data</p><strong className="text-white text-lg">29 de novembro</strong></div></li>
+            <li className="flex items-center gap-4"><Calendar className="text-blue-400" size={24}/> <div><p className="text-[10px] uppercase tracking-widest text-blue-300 font-bold">Data</p><strong className="text-white text-lg">06 de dezembro</strong></div></li>
             <li className="flex items-center gap-4"><MapPin className="text-blue-400" size={24}/> <div><p className="text-[10px] uppercase tracking-widest text-blue-300 font-bold">Local</p><strong className="text-white text-lg">Terminal da UR-11</strong></div></li>
             <li className="flex items-center gap-4"><Clock className="text-blue-400" size={24}/> <div><p className="text-[10px] uppercase tracking-widest text-blue-300 font-bold">Concentração</p><strong className="text-white text-lg">05h00</strong></div></li>
             <li className="flex items-center gap-4"><Sun className="text-yellow-400" size={24}/> <div><p className="text-[10px] uppercase tracking-widest text-yellow-500 font-bold">Aquecimento</p><strong className="text-white text-lg">05h30</strong></div></li>

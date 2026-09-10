@@ -106,7 +106,7 @@ export default async function handler(req, res) {
                       
                       <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #facc15;">
                         <h3 style="margin-top: 0; color: #111827;">Resumo do Evento</h3>
-                        <p style="margin: 5px 0;">📅 <strong>Data:</strong> 29 de Novembro</p>
+                        <p style="margin: 5px 0;">📅 <strong>Data:</strong> 06 de dezembro</p>
                         <p style="margin: 5px 0;">⏰ <strong>Horários:</strong> Concentração: 05h00 | Largada: 06h00</p>
                         <p style="margin: 5px 0;">📍 <strong>Local:</strong> Terminal da UR-11</p>
                       </div>
